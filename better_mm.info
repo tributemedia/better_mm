@@ -1,0 +1,6 @@
+name = Better Mega Menu
+description = Provides configuration page to choose a menu to pull items from and create a custom menu using those items.
+package = Menus
+core = 7.x
+version 7.x-1.0-dev
+files[] = better_mm.module
