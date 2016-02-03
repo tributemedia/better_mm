@@ -1,0 +1,49 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provides configuration page to choose a menu to pull items from and create a custom menu using those items.
+ */
+
+// =================================
+// = Implements hook_permission(). =
+// =================================
+
+function better_mm_menu() {
+	$permission = array(
+		'administer better mm' => array(
+			'title' => t('Administer Better Mega Menu'),
+			'description' => t('Configure Better Mega Menu Settings.'),
+		),
+	);
+	return $permission;
+}
+
+// ===========================
+// = Implements hook_menu(). =
+// ===========================
+
+function better_mm_menu() {
+	$items['admin/structure/better_mm'] = array(
+		'title' => t('Better Mega Menu Settings'),
+		'description' => t('Configure Better Mega Menu Settings.'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('better_mm_admin_settings'),
+		'access arguments' => array('administer better mm'),
+	);
+	return $items;
+}
+
+// ================================
+// = Construct admin settins form =
+// ================================
+
+function better_mm_admin_setting() {
+	$form['better_mm_menu'] = array(
+		'#type' => 'select',
+		'#title' => t('Menu'),
+		'#options' => array('main_menu' => 'Main Menu', 'secondary_menu' => 'Secondary Menu',),
+	);
+	return $form;
+}
