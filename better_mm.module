@@ -10,7 +10,7 @@
 // = Implements hook_permission(). =
 // =================================
 
-function better_mm_menu() {
+function better_mm_permission() {
 	$permission = array(
 		'administer better mm' => array(
 			'title' => t('Administer Better Mega Menu'),
