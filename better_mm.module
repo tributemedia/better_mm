@@ -39,11 +39,73 @@ function better_mm_menu() {
 // = Construct admin settins form =
 // ================================
 
-function better_mm_admin_setting() {
-	$form['better_mm_menu'] = array(
-		'#type' => 'select',
-		'#title' => t('Menu'),
-		'#options' => array('main_menu' => 'Main Menu', 'secondary_menu' => 'Secondary Menu',),
+function better_mm_admin_settings($form, &$form_state) {
+	$style_options = array(
+		'standard' => 'Standard',
+		'wide' => 'Wide',
+		'mega' => 'Mega Menu',
 	);
+	$show_wide = FALSE;
+	$show_mega = FALSE;
+	
+	
+  $form['bmm_menu'] = array(
+    '#title' => t('Select Menu'),
+	  '#type' => 'select',
+	  '#options' => better_mm_get_options('menus'),
+	  '#default_value' => variable_get('bmm_menu', 'main-menu'),
+	  '#ajax' => array(
+	    'callback' => 'better_mm_menu_items_ajax',
+	    'wrapper' => 'better-mm-menu-items',
+	    'method' => 'replace',
+	    'effect' => 'fade',
+	  ),
+	);
+	$form['bmm_menu_items_fieldset'] = array(
+    '#title' => t("Menu Items"),
+    // The prefix/suffix provide the div that we're replacing, named by
+    // #ajax['wrapper'] above.
+    '#prefix' => '<div id="better-mm-menu-items">',
+    '#suffix' => '</div>',
+    '#type' => 'fieldset',
+    '#description' => t('Description here.'),
+	);
+	
+	$menu_selection = !empty($form_state['values']['bmm_menu']) ? $form_state['values']['bmm_menu'] : 'main-menu';
+	$menu_items = menu_navigation_links($menu_selection);
+	
+	foreach ($menu_items as $menu_item) {
+		$item_name = $menu_item['title'];
+		$variable_name = 'bmm_style_' . strtolower($item_name);
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)] = array(
+			'#type' => 'fieldset',
+			'#title' => t($item_name),
+		);
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)]['bmm_' . strtolower($item_name) . '_style'] = array(
+			'#type' => 'select',
+			'#title' => t('Menu Item Style'),
+			'#options' => $style_options,
+			'#default_value' => variable_get($variable_name, 'standard'),
+	}
 	return $form;
+}
+
+// ==================================================
+// = Ajax callback for menu items of selected menu. =
+// ==================================================
+
+function better_mm_menu_items_ajax($form, $form_state) {
+	return $form['bmm_menu_items_fieldset'];
+}
+
+// ==================================================
+// = Get list of options for select list form item. =
+// ==================================================
+
+function better_mm_get_options($item) {
+	if ($item == 'menus') {
+		$options = menu_get_menus();
+		$options[] = array('select-one' => '-Select One-');
+	}
+	return $options;
 }
