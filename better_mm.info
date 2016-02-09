@@ -3,5 +3,5 @@ description = Provides configuration page to choose a menu to pull items from an
 package = Menus
 core = 7.x
 version 7.x-1.0-dev
-configure = admin/structure/better_mm
 files[] = better_mm.module
+configure = admin/structure/better_mm

@@ -40,14 +40,10 @@ function better_mm_menu() {
 // ================================
 
 function better_mm_admin_settings($form, &$form_state) {
-	$style_options = array(
-		'standard' => 'Standard',
-		'wide' => 'Wide',
-		'mega' => 'Mega Menu',
-	);
 	$show_wide = FALSE;
 	$show_mega = FALSE;
-	
+	$wide_access = FALSE;
+	$mega_access = FALSE;
 	
   $form['bmm_menu'] = array(
     '#title' => t('Select Menu'),
@@ -55,8 +51,8 @@ function better_mm_admin_settings($form, &$form_state) {
 	  '#options' => better_mm_get_options('menus'),
 	  '#default_value' => variable_get('bmm_menu', 'main-menu'),
 	  '#ajax' => array(
-	    'callback' => 'better_mm_menu_items_ajax',
-	    'wrapper' => 'better-mm-menu-items',
+	    'callback' => 'better_mm_menu_items_ajax_callback',
+	    'wrapper' => 'bmm-menu-items',
 	    'method' => 'replace',
 	    'effect' => 'fade',
 	  ),
@@ -65,7 +61,7 @@ function better_mm_admin_settings($form, &$form_state) {
     '#title' => t("Menu Items"),
     // The prefix/suffix provide the div that we're replacing, named by
     // #ajax['wrapper'] above.
-    '#prefix' => '<div id="better-mm-menu-items">',
+    '#prefix' => '<div id="bmm-menu-items">',
     '#suffix' => '</div>',
     '#type' => 'fieldset',
     '#description' => t('Description here.'),
@@ -81,11 +77,35 @@ function better_mm_admin_settings($form, &$form_state) {
 			'#type' => 'fieldset',
 			'#title' => t($item_name),
 		);
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)]['bmm_' . strtolower($item_name) . '_style'] = array(
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)][$variable_name] = array(
 			'#type' => 'select',
 			'#title' => t('Menu Item Style'),
-			'#options' => $style_options,
+			'#options' => better_mm_get_options('styles'),
 			'#default_value' => variable_get($variable_name, 'standard'),
+			'#prefix' => '<div id="bmm-menu-item-' . strtolower($item_name) . '-settings">',
+			'#suffix' => '</div>',
+			'#ajax' => array(
+ 				'callback' => 'better_mm_style_ajax_callback',
+ 				'wrapper' => 'bmm-style-settings',
+ 				'method' => 'replace',
+ 				'effect' => 'fade',
+			),
+		);
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)]['bmm_menu_' . strtolower($item_name) . '_style_settings_subset'] = array(
+			'#type' => 'fieldset',
+			'#prefix' => '<div id="bmm-style-settings">',
+			'#suffix' => '</div>',
+			'#description' => t('description here'),
+		);
+		
+		$bmm_item_style = !empty($form_state['triggering_element']['#value']) ?
+ 			$form_state['triggering_element']['#value'] : 'standard';
+		
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)]['bmm_menu_item_' . strtolower($item_name) . '_' . $bmm_item_style . '_setting'] = array(
+		  //'#access' => $wide_access,
+		  '#type' => 'textfield',
+		  '#title' => t('Image Upload'),
+		);
 	}
 	return $form;
 }
@@ -94,8 +114,18 @@ function better_mm_admin_settings($form, &$form_state) {
 // = Ajax callback for menu items of selected menu. =
 // ==================================================
 
-function better_mm_menu_items_ajax($form, $form_state) {
+function better_mm_menu_items_ajax_callback($form, $form_state) {
 	return $form['bmm_menu_items_fieldset'];
+}
+
+// =======================================
+// = Ajax callback for menu items style. =
+// =======================================
+
+function better_mm_style_ajax_callback($form, $form_state) {
+	dsm($form_state);
+	$index = $form_state['triggering_element']['#array_parents'];
+	return $form[$index[0]][$index[1]][$index[2]];
 }
 
 // ==================================================
@@ -105,7 +135,14 @@ function better_mm_menu_items_ajax($form, $form_state) {
 function better_mm_get_options($item) {
 	if ($item == 'menus') {
 		$options = menu_get_menus();
-		$options[] = array('select-one' => '-Select One-');
+	}
+	
+	if ($item == 'styles') {
+		$options = array(
+			'standard' => 'Standard',
+			'wide' => 'Wide',
+			'mega' => 'Mega Menu',
+		);	
 	}
 	return $options;
 }
