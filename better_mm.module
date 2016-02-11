@@ -40,11 +40,6 @@ function better_mm_menu() {
 // ================================
 
 function better_mm_admin_settings($form, &$form_state) {
-	$show_wide = FALSE;
-	$show_mega = FALSE;
-	$wide_access = FALSE;
-	$mega_access = FALSE;
-	
   $form['bmm_menu'] = array(
     '#title' => t('Select Menu'),
 	  '#type' => 'select',
@@ -59,8 +54,6 @@ function better_mm_admin_settings($form, &$form_state) {
 	);
 	$form['bmm_menu_items_fieldset'] = array(
     '#title' => t("Menu Items"),
-    // The prefix/suffix provide the div that we're replacing, named by
-    // #ajax['wrapper'] above.
     '#prefix' => '<div id="bmm-menu-items">',
     '#suffix' => '</div>',
     '#type' => 'fieldset',
@@ -72,41 +65,87 @@ function better_mm_admin_settings($form, &$form_state) {
 	
 	foreach ($menu_items as $menu_item) {
 		$item_name = $menu_item['title'];
-		$variable_name = 'bmm_style_' . strtolower($item_name);
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)] = array(
+		$item_machine_name = str_replace(' ', '-', strtolower($item_name));
+		$variable_name = 'bmm_style_' . $item_machine_name;
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name] = array(
 			'#type' => 'fieldset',
 			'#title' => t($item_name),
 		);
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)][$variable_name] = array(
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name][$variable_name] = array(
 			'#type' => 'select',
 			'#title' => t('Menu Item Style'),
 			'#options' => better_mm_get_options('styles'),
 			'#default_value' => variable_get($variable_name, 'standard'),
-			'#prefix' => '<div id="bmm-menu-item-' . strtolower($item_name) . '-settings">',
+			'#prefix' => '<div id="bmm-menu-item-' . $item_machine_name . '-settings">',
 			'#suffix' => '</div>',
 			'#ajax' => array(
  				'callback' => 'better_mm_style_ajax_callback',
- 				'wrapper' => 'bmm-style-settings',
+ 				'wrapper' => 'bmm-style-settings-' . $item_machine_name,
  				'method' => 'replace',
  				'effect' => 'fade',
 			),
 		);
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)]['bmm_menu_' . strtolower($item_name) . '_style_settings_subset'] = array(
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset'] = array(
 			'#type' => 'fieldset',
-			'#prefix' => '<div id="bmm-style-settings">',
+			'#prefix' => '<div id="bmm-style-settings-' . $item_machine_name . '">',
 			'#suffix' => '</div>',
-			'#description' => t('description here'),
 		);
 		
 		$bmm_item_style = !empty($form_state['triggering_element']['#value']) ?
  			$form_state['triggering_element']['#value'] : 'standard';
 		
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . strtolower($item_name)]['bmm_menu_item_' . strtolower($item_name) . '_' . $bmm_item_style . '_setting'] = array(
-		  //'#access' => $wide_access,
-		  '#type' => 'textfield',
+		$wide_access = FALSE;
+		$mega_access = FALSE;
+	  $description = '<p>There are no settings available for a standard menu item.</p>';
+	  
+		if ($bmm_item_style == 'wide') {
+			$wide_access = TRUE;
+			$mega_access = FALSE;
+			$description = '<h4>Wide Menu Settings</h4>';
+		}
+		if ($bmm_item_style == 'mega') {
+			$mega_access = TRUE;
+			$wide_access = FALSE;
+			$description = '<h4>Mega Menu Settings</h4>';
+		}
+		// This will need to be updated with a call to a function that returns the image path.
+		// Used for displaying a preview of the uploaded image on "Wide" items.
+		$image_path = '/sites/default/files/logo.png';
+		
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_' . $bmm_item_style . '_description'] = array(
+			'#type' => 'markup',
+			'#markup' => $description,
+		);
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_wide_image'] = array(
+			'#access' => $wide_access,
+			'#type' => 'item',
+			'#markup' => theme('thumbnail', array(
+				'path' => $image_path,
+				'width' => 100,
+				'height' => 100,
+				'alt' => t('Preview Image'),
+			)),
+		);
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_wide_setting'] = array(
+		  '#access' => $wide_access,
+		  '#type' => 'file',
 		  '#title' => t('Image Upload'),
+			'#description' => t('Select an image that is at least @dimensionspx and maximum @filesize.', array(
+				'@dimensions' => '100x100',
+				'@filesize' => format_size(file_upload_max_size()),
+			)),
+		);
+		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_mega_setting'] = array(
+			'#access' => $mega_access,
+			'#type' => 'textarea',
+			'#title' => t('Mega Menu Code'),
+			'#description' => t('Add html code for Mega Menu block here.'),
 		);
 	}
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save Configuration'),
+	);
 	return $form;
 }
 
@@ -123,9 +162,12 @@ function better_mm_menu_items_ajax_callback($form, $form_state) {
 // =======================================
 
 function better_mm_style_ajax_callback($form, $form_state) {
-	dsm($form_state);
 	$index = $form_state['triggering_element']['#array_parents'];
-	return $form[$index[0]][$index[1]][$index[2]];
+	$menu_item = $form_state['triggering_element']['#name'];
+	$menu_item = explode('_', $menu_item);
+	$menu_item = $menu_item[2];
+	
+	return $form[$index[0]][$index[1]]['bmm_menu_' . $menu_item . '_style_settings_subset'];
 }
 
 // ==================================================
