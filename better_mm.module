@@ -40,6 +40,9 @@ function better_mm_menu() {
 // ================================
 
 function better_mm_admin_settings($form, &$form_state) {
+  $wide_access = FALSE;
+  $mega_access = FALSE;
+	
   $form['bmm_menu'] = array(
     '#title' => t('Select Menu'),
 	  '#type' => 'select',
@@ -63,6 +66,11 @@ function better_mm_admin_settings($form, &$form_state) {
 	$menu_selection = !empty($form_state['values']['bmm_menu']) ? $form_state['values']['bmm_menu'] : 'main-menu';
 	$menu_items = menu_navigation_links($menu_selection);
 	
+	$form['menu_items'] = array(
+		'#type' => 'value',
+		'#value' => $menu_items,
+	);
+	
 	foreach ($menu_items as $menu_item) {
 		$item_name = $menu_item['title'];
 		$item_machine_name = str_replace(' ', '-', strtolower($item_name));
@@ -76,7 +84,7 @@ function better_mm_admin_settings($form, &$form_state) {
 			'#title' => t('Menu Item Style'),
 			'#options' => better_mm_get_options('styles'),
 			'#default_value' => variable_get($variable_name, 'standard'),
-			'#prefix' => '<div id="bmm-menu-item-' . $item_machine_name . '-settings">',
+			'#prefix' => '<div id="bmm-menu-item-' . $item_machine_name . '-settings" class="bmm-menu-item-settings">',
 			'#suffix' => '</div>',
 			'#ajax' => array(
  				'callback' => 'better_mm_style_ajax_callback',
@@ -87,17 +95,18 @@ function better_mm_admin_settings($form, &$form_state) {
 		);
 		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset'] = array(
 			'#type' => 'fieldset',
-			'#prefix' => '<div id="bmm-style-settings-' . $item_machine_name . '">',
+			'#prefix' => '<div id="bmm-style-settings-' . $item_machine_name . '" class="bmm-style-settings">',
 			'#suffix' => '</div>',
 		);
 		
 		$bmm_item_style = !empty($form_state['triggering_element']['#value']) ?
  			$form_state['triggering_element']['#value'] : 'standard';
 		
-		$wide_access = FALSE;
-		$mega_access = FALSE;
-	  $description = '<p>There are no settings available for a standard menu item.</p>';
-	  
+		if ($bmm_item_style == 'standard') {
+		  $wide_access = FALSE;
+		  $mega_access = FALSE;
+	    $description = '<p>There are no settings available for a standard menu item.</p>';
+	  }
 		if ($bmm_item_style == 'wide') {
 			$wide_access = TRUE;
 			$mega_access = FALSE;
@@ -140,6 +149,7 @@ function better_mm_admin_settings($form, &$form_state) {
 			'#type' => 'textarea',
 			'#title' => t('Mega Menu Code'),
 			'#description' => t('Add html code for Mega Menu block here.'),
+			'#default_value' => variable_get('bmm_' . $item_machine_name . '_mega', ''),
 		);
 	}
 	$form['submit'] = array(
@@ -147,6 +157,24 @@ function better_mm_admin_settings($form, &$form_state) {
 		'#value' => t('Save Configuration'),
 	);
 	return $form;
+}
+
+// ==============================
+// = Admin form submit callback =
+// ==============================
+
+function better_mm_admin_settings_submit(&$form, &$form_state) {
+	$menu_items = $form_state['values']['menu_items'];
+	variable_set('bmm_menu', $form_state['values']['bmm_menu']);
+	foreach ($menu_items as $menu_item) {
+		$item_title = str_replace(' ', '-', strtolower($menu_item['title']));
+		variable_set('bmm_style_' . $item_title, $form_state['values']['bmm_style_' . $item_title]);
+		$item_style = variable_get('bmm_style_' . $item_title);
+		if ($item_style != 'standard') {
+		  variable_set('bmm_' . $item_title . '_' . $item_style, $form_state['values']['bmm_menu_item_' . $item_title . '_' . $item_style . '_setting']);
+		}
+	}
+	drupal_set_message('Configuration has been saved.');
 }
 
 // ==================================================

@@ -1,0 +1,17 @@
+/* ===================== */
+/* = Admin page styles = */
+/* ===================== */
+
+.bmm-menu-item-settings {
+	float: left;
+	margin-right: 30px;
+}
+
+.bmm-style-settings fieldset {
+	border: none;
+	padding: 0;
+}
+
+.bmm-style-settings .form-type-item {
+	padding: 0;
+}
