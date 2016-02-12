@@ -62,6 +62,16 @@ function better_mm_admin_settings($form, &$form_state) {
     '#type' => 'fieldset',
     '#description' => t('Description here.'),
 	);
+	$form['bmm_menu_items_fieldset']['description_fieldset'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Help'),
+		'#collapsible' => TRUE,
+		'#collapsed' => TRUE,
+	);
+	$form['bmm_menu_items_fieldset']['description_fieldset']['description'] = array(
+		'#type' => 'markup',
+		'#markup' => '<div id="better-mm-help-text">You can put some helpful text here.</div>',
+	);
 	
 	$menu_selection = !empty($form_state['values']['bmm_menu']) ? $form_state['values']['bmm_menu'] : 'main-menu';
 	$menu_items = menu_navigation_links($menu_selection);
