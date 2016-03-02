@@ -128,43 +128,32 @@ function better_mm_admin_settings($form, &$form_state) {
 			$wide_access = FALSE;
 			$description = '<h4>Mega Menu Settings</h4>';
 		}
-		// This will need to be updated with a call to a function that returns the image path.
-		// Used for displaying a preview of the uploaded image on "Wide" items.
-		$image_path = '/sites/default/files/logo.png';
 		
-		// $form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_' . $bmm_item_style . '_description'] = array(
-// 			'#type' => 'markup',
-// 			'#markup' => $description,
-// 		);
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_wide_image'] = array(
-			'#access' => $wide_access,
-			'#type' => 'item',
-			'#markup' => theme('thumbnail', array(
-				'path' => $image_path,
-				'width' => 100,
-				'height' => 100,
-				'alt' => t('Preview Image'),
-			)),
-		);
 		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_wide_setting'] = array(
 		  '#access' => $wide_access,
 		  '#type' => 'managed_file',
 			'#name' => 'wide_item_image',
 		  '#title' => t('Image Upload'),
 			'#size' => 40,
-			'#description' => t('Select an image that is at least @dimensionspx and maximum @filesize.', array(
+			'#description' => t('Select an image that is at least @dimensionspx and maximum @filesize. Allowed extensions: png jpg jpeg', array(
 				'@dimensions' => '100x100',
 				'@filesize' => format_size(file_upload_max_size()),
 			)),
+			'#upload_validators' => array(
+				'file_validate_extensions' => array('png jpg jpeg'),
+			),
 			'#upload_location' => 'public://menu_images',
-			'#default_value' => variable_get('bmm_menu_item' . $item_machine_name . '_wide_setting', ''),
+			'#default_value' => variable_get('bmm_menu_item_' . $item_machine_name . '_wide_setting', ''),
+			'#theme' => 'better_mm_thumb_upload',
 		);
 		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_mega_setting'] = array(
 			'#access' => $mega_access,
-			'#type' => 'textarea',
+			'#type' => 'text_format',
 			'#title' => t('Mega Menu Code'),
 			'#description' => t('Add html code for Mega Menu block here.'),
 			'#default_value' => variable_get('bmm_' . $item_machine_name . '_mega', ''),
+			'#format' => 'full_html',
+			'#rows' => 10,
 		);
 	}
 	$form['submit'] = array(
@@ -175,10 +164,11 @@ function better_mm_admin_settings($form, &$form_state) {
 }
 
 // ==============================
-// = Admin form submit callback =
+// = Admin form submit handler =
 // ==============================
 
 function better_mm_admin_settings_submit(&$form, &$form_state) {
+	//dsm($form_state['values']);
 	$menu_items = $form_state['values']['menu_items'];
 	variable_set('bmm_menu', $form_state['values']['bmm_menu']);
 	foreach ($menu_items as $menu_item) {
@@ -186,12 +176,13 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
 		variable_set('bmm_style_' . $item_title, $form_state['values']['bmm_style_' . $item_title]);
 		$item_style = variable_get('bmm_style_' . $item_title);
 		if ($item_style == 'mega') {
-		  variable_set('bmm_' . $item_title . '_mega', $form_state['values']['bmm_menu_item_' . $item_title . '_mega_setting']);
+		  variable_set('bmm_' . $item_title . '_mega', $form_state['values']['bmm_menu_item_' . $item_title . '_mega_setting']['value']);
 		}
 		if ($item_style == 'wide') {
 			if (isset($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting'])) {
 				$file = file_load($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting']);
-				$file->status = FILE_STATUS_PERMANENT;
+    	  variable_set('bmm_menu_item_' . $item_title . '_wide_setting', $file);
+ 				$file->status = FILE_STATUS_PERMANENT;
 				file_save($file);
 			}
 		}
@@ -238,4 +229,34 @@ function better_mm_get_options($item) {
 		);	
 	}
 	return $options;
+}
+
+// ====================================================
+// = Implements mymodule_thumb_upload theme callback. =
+// ====================================================
+
+function theme_better_mm_thumb_upload($variables) {
+
+    $element = $variables['element'];
+		print 'test';
+
+    if (isset($element['#file']->uri)) {
+        $output = '<div id="edit-logo-ajax-wrapper"><div class="form-item form-type-managed-file form-item-logo"><span class="file">';
+        $output .= '<img height="50px" src="' . image_style_url('thumbnail', $element['#file']->uri) . '" />';
+        $output .= '</span><input type="submit" id="edit-' . $element['#name'] . '-remove-button" name="' . $element['#name'] . '_remove_button" value="Remove" class="form-submit ajax-processed">';
+        $output .= '<input type="hidden" name="' . $element['#name'] . '[fid]" value="' . $element['#file']->fid . '"></div></div>';
+        return $output;
+    }
+}
+
+// ============================
+// = Implements hook_theme(). =
+// ============================
+
+function better_mm_theme() {
+  return array(
+    'better_mm_thumb_upload' => array(
+      'render element' => 'element',
+    ),
+  );
 }
