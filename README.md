@@ -1,4 +1,4 @@
-Better Mega Menu
+#Better Mega Menu
 
 This is a drupal module to allow the configuration of menu items of a selected menu. The configuration options will
 include the following options:
