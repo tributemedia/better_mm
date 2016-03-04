@@ -80,11 +80,15 @@ function better_mm_admin_settings($form, &$form_state) {
 		'#type' => 'value',
 		'#value' => $menu_items,
 	);
-	
 	foreach ($menu_items as $menu_item) {
+		// variables
 		$item_name = $menu_item['title'];
 		$item_machine_name = str_replace(' ', '-', strtolower($item_name));
 		$variable_name = 'bmm_style_' . $item_machine_name;
+		$mega_default = variable_get('bmm_menu_item_home_mega_setting');
+		$mega_default = !empty($mega_default['value']) ? $mega_default['value'] : '';
+		
+		// Construct settings fields for each menu item.
 		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name] = array(
 			'#type' => 'fieldset',
 			'#title' => t($item_name),
@@ -116,17 +120,14 @@ function better_mm_admin_settings($form, &$form_state) {
 		if ($bmm_item_style == 'standard') {
 		  $wide_access = FALSE;
 		  $mega_access = FALSE;
-	    $description = '<p>There are no settings available for a standard menu item.</p>';
 	  }
 		if ($bmm_item_style == 'wide') {
 			$wide_access = TRUE;
 			$mega_access = FALSE;
-			$description = '<h4>Wide Menu Settings</h4>';
 		}
 		if ($bmm_item_style == 'mega') {
 			$mega_access = TRUE;
 			$wide_access = FALSE;
-			$description = '<h4>Mega Menu Settings</h4>';
 		}
 		
 		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_wide_setting'] = array(
@@ -144,50 +145,46 @@ function better_mm_admin_settings($form, &$form_state) {
 			),
 			'#upload_location' => 'public://menu_images',
 			'#default_value' => variable_get('bmm_menu_item_' . $item_machine_name . '_wide_setting', ''),
-			'#theme' => 'better_mm_thumb_upload',
 		);
 		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_mega_setting'] = array(
 			'#access' => $mega_access,
 			'#type' => 'text_format',
 			'#title' => t('Mega Menu Code'),
 			'#description' => t('Add html code for Mega Menu block here.'),
-			'#default_value' => variable_get('bmm_' . $item_machine_name . '_mega', ''),
+			'#default_value' => $mega_default,
 			'#format' => 'full_html',
 			'#rows' => 10,
 		);
 	}
-	$form['submit'] = array(
-		'#type' => 'submit',
-		'#value' => t('Save Configuration'),
-	);
-	return $form;
+
+	return system_settings_form($form);
 }
 
 // ==============================
 // = Admin form submit handler =
 // ==============================
 
-function better_mm_admin_settings_submit(&$form, &$form_state) {
-	$menu_items = $form_state['values']['menu_items'];
-	variable_set('bmm_menu', $form_state['values']['bmm_menu']);
-	foreach ($menu_items as $menu_item) {
-		$item_title = str_replace(' ', '-', strtolower($menu_item['title']));
-		variable_set('bmm_style_' . $item_title, $form_state['values']['bmm_style_' . $item_title]);
-		$item_style = variable_get('bmm_style_' . $item_title);
-		if ($item_style == 'mega') {
-		  variable_set('bmm_' . $item_title . '_mega', $form_state['values']['bmm_menu_item_' . $item_title . '_mega_setting']['value']);
-		}
-		if ($item_style == 'wide') {
-			if (isset($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting'])) {
-				$file = file_load($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting']);
-    	  variable_set('bmm_menu_item_' . $item_title . '_wide_setting', $file);
- 				$file->status = FILE_STATUS_PERMANENT;
-				//file_save($file);
-			}
-		}
-	}
-	drupal_set_message('Configuration has been saved.');
-}
+// function better_mm_admin_settings_submit(&$form, &$form_state) {
+// 	$menu_items = $form_state['values']['menu_items'];
+// 	variable_set('bmm_menu', $form_state['values']['bmm_menu']);
+// 	foreach ($menu_items as $menu_item) {
+// 		$item_title = str_replace(' ', '-', strtolower($menu_item['title']));
+// 		variable_set('bmm_style_' . $item_title, $form_state['values']['bmm_style_' . $item_title]);
+// 		$item_style = variable_get('bmm_style_' . $item_title);
+// 		if ($item_style == 'mega') {
+// 		  variable_set('bmm_' . $item_title . '_mega', $form_state['values']['bmm_menu_item_' . $item_title . '_mega_setting']['value']);
+// 		}
+// 		if ($item_style == 'wide') {
+// 			if (isset($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting'])) {
+// 				$file = file_load($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting']);
+//     	  variable_set('bmm_menu_item_' . $item_title . '_wide_setting', $file);
+//  				$file->status = FILE_STATUS_PERMANENT;
+// 				//file_save($file);
+// 			}
+// 		}
+// 	}
+// 	drupal_set_message('Configuration has been saved.');
+// }
 
 // ==================================================
 // = Ajax callback for menu items of selected menu. =
@@ -230,32 +227,37 @@ function better_mm_get_options($item) {
 	return $options;
 }
 
-// ====================================================
+// =====================================================
 // = Implements better_mm_thumb_upload theme callback. =
-// ====================================================
+// =====================================================
 
-function theme_better_mm_thumb_upload($variables) {
-
-    $element = $variables['element'];
-		print 'test';
-
-    if (isset($element['#file']->uri)) {
-        $output = '<div id="edit-logo-ajax-wrapper"><div class="form-item form-type-managed-file form-item-logo"><span class="file">';
-        $output .= '<img height="50px" src="' . image_style_url('thumbnail', $element['#file']->uri) . '" />';
-        $output .= '</span><input type="submit" id="edit-' . $element['#name'] . '-remove-button" name="' . $element['#name'] . '_remove_button" value="Remove" class="form-submit ajax-processed">';
-        $output .= '<input type="hidden" name="' . $element['#name'] . '[fid]" value="' . $element['#file']->fid . '"></div></div>';
-        return $output;
-    }
-}
+// function theme_better_mm_thumb_upload($variables) {
+//
+//     $element = $variables['element'];
+//
+//     if (isset($element['#file']->uri)) {
+//         $output = '<div id="edit-logo-ajax-wrapper">';
+// 				$output .= '<div class="form-item form-type-managed-file form-item-logo"><span class="file">';
+//         $output .= '<img height="50px" src="'
+// 					. image_style_url('thumbnail', $element['#file']->uri) . '" />';
+//         $output .= '</span><input type="submit" id="edit-'
+// 					. $element['#name'] . '-remove-button" name="' . $element['#name']
+// 					. '_remove_button" value="Remove" class="form-submit ajax-processed">';
+//         $output .= '<input type="hidden" name="' . $element['#name']
+// 					. '[fid]" value="' . $element['#file']->fid . '"></div></div>';
+//         return $output;
+//     }
+// }
 
 // ============================
 // = Implements hook_theme(). =
 // ============================
 
-function better_mm_theme() {
-  return array(
-    'better_mm_thumb_upload' => array(
-      'render element' => 'element',
-    ),
-  );
-}
+// function better_mm_theme() {
+//   return array(
+//     'better_mm_thumb_upload' => array(
+//       'render element' => 'element',
+// 			//'file' => 'better_mm.module',
+//     ),
+//   );
+// }
