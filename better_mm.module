@@ -182,7 +182,7 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
 				$file = file_load($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting']);
     	  variable_set('bmm_menu_item_' . $item_title . '_wide_setting', $file);
  				$file->status = FILE_STATUS_PERMANENT;
-				file_save($file);
+				//file_save($file);
 			}
 		}
 	}
