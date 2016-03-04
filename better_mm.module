@@ -84,16 +84,18 @@ function better_mm_admin_settings($form, &$form_state) {
 		// variables
 		$item_name = $menu_item['title'];
 		$item_machine_name = str_replace(' ', '-', strtolower($item_name));
+		$menu_item_fieldset = 'bmm_menu_item_' . $item_machine_name;
 		$variable_name = 'bmm_style_' . $item_machine_name;
+		$style_settings_fieldset = 'bmm_menu_' . $item_machine_name . '_style_settings_subset';
 		$mega_default = variable_get('bmm_menu_item_home_mega_setting');
 		$mega_default = !empty($mega_default['value']) ? $mega_default['value'] : '';
 		
 		// Construct settings fields for each menu item.
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name] = array(
+		$form['bmm_menu_items_fieldset'][$menu_item_fieldset] = array(
 			'#type' => 'fieldset',
 			'#title' => t($item_name),
 		);
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name][$variable_name] = array(
+		$form['bmm_menu_items_fieldset'][$menu_item_fieldset][$variable_name] = array(
 			'#type' => 'select',
 			'#title' => t('Menu Item Style'),
 			'#options' => better_mm_get_options('styles'),
@@ -107,7 +109,7 @@ function better_mm_admin_settings($form, &$form_state) {
  				'effect' => 'fade',
 			),
 		);
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset'] = array(
+		$form['bmm_menu_items_fieldset'][$menu_item_fieldset][$style_settings_fieldset] = array(
 			'#type' => 'fieldset',
 			'#prefix' => '<div id="bmm-style-settings-' . $item_machine_name . '" class="bmm-style-settings">',
 			'#suffix' => '</div>',
@@ -116,6 +118,7 @@ function better_mm_admin_settings($form, &$form_state) {
 		$saved_style = variable_get('bmm_style_' . $item_machine_name, 'standard');
 		$bmm_item_style = !empty($form_state['triggering_element']['#value']) ? 
 			$form_state['triggering_element']['#value'] : $saved_style;
+		
 				
 		if ($bmm_item_style == 'standard') {
 		  $wide_access = FALSE;
@@ -130,7 +133,7 @@ function better_mm_admin_settings($form, &$form_state) {
 			$wide_access = FALSE;
 		}
 		
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_wide_setting'] = array(
+		$form['bmm_menu_items_fieldset'][$menu_item_fieldset][$style_settings_fieldset]['bmm_menu_item_' . $item_machine_name . '_wide_setting'] = array(
 		  '#access' => $wide_access,
 		  '#type' => 'managed_file',
 			'#name' => 'wide_item_image',
@@ -146,7 +149,7 @@ function better_mm_admin_settings($form, &$form_state) {
 			'#upload_location' => 'public://menu_images',
 			'#default_value' => variable_get('bmm_menu_item_' . $item_machine_name . '_wide_setting', ''),
 		);
-		$form['bmm_menu_items_fieldset']['bmm_menu_item_' . $item_machine_name]['bmm_menu_' . $item_machine_name . '_style_settings_subset']['bmm_menu_item_' . $item_machine_name . '_mega_setting'] = array(
+		$form['bmm_menu_items_fieldset'][$menu_item_fieldset][$style_settings_fieldset]['bmm_menu_item_' . $item_machine_name . '_mega_setting'] = array(
 			'#access' => $mega_access,
 			'#type' => 'text_format',
 			'#title' => t('Mega Menu Code'),
