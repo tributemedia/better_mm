@@ -87,7 +87,7 @@ function better_mm_admin_settings($form, &$form_state) {
     $menu_item_fieldset = 'bmm_menu_item_' . $item_machine_name;
     $variable_name = 'bmm_style_' . $item_machine_name;
     $style_settings_fieldset = 'bmm_menu_' . $item_machine_name . '_style_settings_subset';
-    $mega_default = variable_get('bmm_menu_item_home_mega_setting');
+    $mega_default = variable_get('bmm_menu_item_' . $item_machine_name . '_mega_setting');
     $mega_default = !empty($mega_default['value']) ? $mega_default['value'] : '';
     
     // Construct settings fields for each menu item.
@@ -114,11 +114,13 @@ function better_mm_admin_settings($form, &$form_state) {
       '#prefix' => '<div id="bmm-style-settings-' . $item_machine_name . '" class="bmm-style-settings">',
       '#suffix' => '</div>',
     );
-    
     $saved_style = variable_get('bmm_style_' . $item_machine_name, 'standard');
     $bmm_item_style = !empty($form_state['triggering_element']['#value']) ? 
       $form_state['triggering_element']['#value'] : $saved_style;
     
+    if ($bmm_item_style == 'Upload') {
+      $bmm_item_style = 'wide';
+    }
         
     if ($bmm_item_style == 'standard') {
       $wide_access = FALSE;
@@ -136,17 +138,17 @@ function better_mm_admin_settings($form, &$form_state) {
     $form['bmm_menu_items_fieldset'][$menu_item_fieldset][$style_settings_fieldset]['bmm_menu_item_' . $item_machine_name . '_wide_setting'] = array(
       '#access' => $wide_access,
       '#type' => 'managed_file',
-      '#name' => 'wide_item_image',
       '#title' => t('Image Upload'),
       '#size' => 40,
-      '#description' => t('Select an image that is at least @dimensionspx and maximum @filesize. Allowed extensions: png jpg jpeg', array(
+      '#description' => t('Select an image that is at least @dimensionspx and maximum @filesize. Allowed extensions: png jpg jpeg',
+      array(
         '@dimensions' => '100x100',
         '@filesize' => format_size(file_upload_max_size()),
       )),
-      '#upload_validators' => array(
+	  '#upload_validators' => array(
         'file_validate_extensions' => array('png jpg jpeg'),
       ),
-      '#upload_location' => 'public://menu_images',
+      '#upload_location' => 'public://menu_images/',
       '#default_value' => variable_get('bmm_menu_item_' . $item_machine_name . '_wide_setting', ''),
     );
     $form['bmm_menu_items_fieldset'][$menu_item_fieldset][$style_settings_fieldset]['bmm_menu_item_' . $item_machine_name . '_mega_setting'] = array(
@@ -159,35 +161,10 @@ function better_mm_admin_settings($form, &$form_state) {
       '#rows' => 10,
     );
   }
+  $form['#submit'][] = 'better_mm_admin_settings_submit';
 
   return system_settings_form($form);
 }
-
-// ==============================
-// = Admin form submit handler =
-// ==============================
-
-// function better_mm_admin_settings_submit(&$form, &$form_state) {
-//   $menu_items = $form_state['values']['menu_items'];
-//   variable_set('bmm_menu', $form_state['values']['bmm_menu']);
-//   foreach ($menu_items as $menu_item) {
-//     $item_title = str_replace(' ', '-', strtolower($menu_item['title']));
-//     variable_set('bmm_style_' . $item_title, $form_state['values']['bmm_style_' . $item_title]);
-//     $item_style = variable_get('bmm_style_' . $item_title);
-//     if ($item_style == 'mega') {
-//       variable_set('bmm_' . $item_title . '_mega', $form_state['values']['bmm_menu_item_' . $item_title . '_mega_setting']['value']);
-//     }
-//     if ($item_style == 'wide') {
-//       if (isset($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting'])) {
-//         $file = file_load($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting']);
-//         variable_set('bmm_menu_item_' . $item_title . '_wide_setting', $file);
-//          $file->status = FILE_STATUS_PERMANENT;
-//         //file_save($file);
-//       }
-//     }
-//   }
-//   drupal_set_message('Configuration has been saved.');
-// }
 
 // ==================================================
 // = Ajax callback for menu items of selected menu. =
@@ -202,13 +179,28 @@ function better_mm_menu_items_ajax_callback($form, $form_state) {
 // =======================================
 
 function better_mm_style_ajax_callback($form, $form_state) {
-  //dsm($form_state['triggering_element']);
   $index = $form_state['triggering_element']['#array_parents'];
   $menu_item = $form_state['triggering_element']['#name'];
   $menu_item = explode('_', $menu_item);
   $menu_item = $menu_item[2];
   
   return $form[$index[0]][$index[1]]['bmm_menu_' . $menu_item . '_style_settings_subset'];
+}
+
+// ==============================
+// = Admin form submit handler =
+// ==============================
+
+function better_mm_admin_settings_submit(&$form, &$form_state) {
+  $menu_items = !empty($form_state['values']['menu_items']) ? $form_state['values']['menu_items'] : '';
+  
+  if (!empty($menu_items)) {
+    foreach ($menu_items as $menu_item) {
+      $title = str_replace(' ', '-', strtolower($menu_item['title']));
+      $style = $form_state['values']['bmm_style_' . $title];
+      
+    }
+  }
 }
 
 // ==================================================
@@ -230,37 +222,3 @@ function better_mm_get_options($item) {
   return $options;
 }
 
-// =====================================================
-// = Implements better_mm_thumb_upload theme callback. =
-// =====================================================
-
-// function theme_better_mm_thumb_upload($variables) {
-//
-//     $element = $variables['element'];
-//
-//     if (isset($element['#file']->uri)) {
-//         $output = '<div id="edit-logo-ajax-wrapper">';
-//         $output .= '<div class="form-item form-type-managed-file form-item-logo"><span class="file">';
-//         $output .= '<img height="50px" src="'
-//           . image_style_url('thumbnail', $element['#file']->uri) . '" />';
-//         $output .= '</span><input type="submit" id="edit-'
-//           . $element['#name'] . '-remove-button" name="' . $element['#name']
-//           . '_remove_button" value="Remove" class="form-submit ajax-processed">';
-//         $output .= '<input type="hidden" name="' . $element['#name']
-//           . '[fid]" value="' . $element['#file']->fid . '"></div></div>';
-//         return $output;
-//     }
-// }
-
-// ============================
-// = Implements hook_theme(). =
-// ============================
-
-// function better_mm_theme() {
-//   return array(
-//     'better_mm_thumb_upload' => array(
-//       'render element' => 'element',
-//       //'file' => 'better_mm.module',
-//     ),
-//   );
-// }
