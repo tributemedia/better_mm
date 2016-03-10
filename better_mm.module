@@ -130,7 +130,7 @@ function better_mm_admin_settings($form, &$form_state) {
       $wide_access = TRUE;
       $mega_access = FALSE;
     }
-    if ($bmm_item_style == 'mega') {
+    if ($bmm_item_style == 'advanced') {
       $mega_access = TRUE;
       $wide_access = FALSE;
     }
@@ -192,7 +192,6 @@ function better_mm_style_ajax_callback($form, $form_state) {
 // ==============================
 
 function better_mm_admin_settings_submit(&$form, &$form_state) {
-  dsm($form_state['values']['menu_items'], 'Menu Items');
   $menu_items = !empty($form_state['values']['menu_items']) ? $form_state['values']['menu_items'] : '';
   $key = 0;
   $html = '<ul class="mega-menu mega-level-1 first hide-on-med-and-down">';
@@ -203,15 +202,17 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       $style = $form_state['values']['bmm_style_' . $title];
       $fid = !empty($form_state['values']['bmm_menu_item_' . $title . '_wide_setting']) ? 
         $form_state['values']['bmm_menu_item_' . $title . '_wide_setting'] : '';
+      $adv_content = !empty($form_state['values']['bmm_menu_item_' . $title . '_mega_setting']['value']) ?
+        $form_state['values']['bmm_menu_item_' . $title . '_mega_setting']['value'] : '';
       $children = better_mm_get_children($menu_item);
       $l1_class = better_mm_get_li_class($key, $menu_items);
       $child_class = better_mm_get_child_class($children, $style);
       $class_list = $l1_class . $child_class;
       
       if ($menu_item['href'] == '<front>') {
-        $url = '/';
+        $url = url('<front>');
       } else {
-        $url = $menu_item['href'];
+        $url = '/' . drupal_get_path_alias($menu_item['href']);
       }
       
       // If a file has been uploaded, set file status to permanent.
@@ -222,62 +223,23 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       }
       
       $html .= '<li class="' . $class_list . '"><a href="' . $url . '">' . $menu_item['title'] . '</a>';
-      dsm($children, 'Level 1');dsm($style, 'Item Style');
       
-      if ($style == 'standard') {
-        // Get children, if any.
-        $html .= '</li>';
-      }
-      if ($style == 'mega') {
-        // Generate HTML using code from text editor.
-        $html .= '</li>';
-      }
-      if ($style == 'wide') {
-        if (!empty($children)) {
-          $key2 = 0;
-          $html .= '<ul class="mega-level-2">';
-          foreach ($children as $child) {
-            $title2 = $child['link']['link_title'];
-            $children2 = better_mm_get_children($child['link']);dsm($children2, 'Level 2');
-            $l2_class = better_mm_get_li_class($key2, $children);
-            $child2_class = better_mm_get_child_class($children2);
-            $class2_list = $l2_class . $child2_class;
-            if ($child['link']['href'] == '<front>') {
-              $url2 = '/';
-            } else {
-              $url2 = $child['link']['href'];
-            }
-            $html .= '<li class="' . $class2_list . '"><a href="' . $url2 . '">' . $title2 . '</a>';
-            $key2++;
-            if (!empty($children2)) {
-              $key3 = 0;
-              $html .= '<ul class="mega-level-3">';
-              foreach ($children2 as $child2) {
-                $title3 = $child2['link']['link_title'];
-                $l3_class = better_mm_get_li_class($key3, $children2);
-                if ($child2['link']['href'] == '<front>') {
-                  $url3 = '/';
-                } else {
-                  $url3 = $child2['link']['href'];
-                }
-                $html .= '<li class="' . $l3_class . '"><a href="' . $url3 . '">' . $title3 . '</a></li>';
-                $key3++;
-              } // foreach child2
-              $html .= '</ul></li>';
-            } else {
-              $html .= '</li>';
-            }
-          } // foreach child
-          $html .= '</ul></li>';
-        } else {
-          $html .= '</li>';
+      if ($style == 'advanced') {
+        // Generate HTML for advanced item drop down.
+        if (!empty($adv_content)) {
+          $html .= '<div class="inner row">' . $adv_content . '</div> <!-- end inner row -->';
         }
+        $html .= '</li>';
+      }
+      if (($style == 'wide') || ($style == 'standard')) {
+        // Generate HTMl for the children of wide or standard items.
+        $html .= better_mm_menu_item_tree($style, $children);
       }
       $key++;
     } // foreach menu_item
     $html .= '</ul>';
-    dsm($html, 'HTML');
   }
+  variable_set('bmm_block_content', $html);
 }
 
 // ==================================================
@@ -293,7 +255,7 @@ function better_mm_get_options($item) {
     $options = array(
       'standard' => 'Standard',
       'wide' => 'Wide',
-      'mega' => 'Advanced',
+      'advanced' => 'Advanced',
     );  
   }
   return $options;
@@ -304,7 +266,11 @@ function better_mm_get_options($item) {
 // ==========================
 
 function better_mm_get_children($menu_item) {
-  $path = $menu_item['href'];
+  if ($menu_item['href'] == '<front>') {
+    $path = '/';
+  } else {
+    $path = $menu_item['href'];
+  }
   $parent = menu_link_get_preferred($path);
   $parameters = array(
   	'active_trail' => array($parent['plid']),
@@ -345,7 +311,7 @@ function better_mm_get_li_class($key, $array) {
 // =================================
 
 function better_mm_get_child_class($children, $style = 'standard') {
-  if ($style == 'mega') {
+  if ($style == 'advanced') {
     return ' unset-child';
   }
   
@@ -354,4 +320,81 @@ function better_mm_get_child_class($children, $style = 'standard') {
   } else {
     return ' no-children';
   }
+}
+
+// =============================
+// = Build menu item tree HTML =
+// =============================
+
+function better_mm_menu_item_tree($style, $children) {
+  $result = '';
+  if (!empty($children)) {
+    $key2 = 0;
+    $result .= '<ul class="mega-level-2 ' . $style . '">';
+    foreach ($children as $child) {
+      $title2 = $child['link']['link_title'];
+      $children2 = better_mm_get_children($child['link']);
+      $l2_class = better_mm_get_li_class($key2, $children);
+      $child2_class = better_mm_get_child_class($children2);
+      $class2_list = $l2_class . $child2_class;
+      if ($child['link']['href'] == '<front>') {
+        $url2 = url('<front>');
+      } else {
+        $url2 = '/' . drupal_get_path_alias($child['link']['href']);
+      }
+      $result .= '<li class="' . $class2_list . '"><a href="' . $url2 . '">' . $title2 . '</a>';
+      $key2++;
+      if (!empty($children2)) {
+        $key3 = 0;
+        $result .= '<div class="plus-button"></div><ul class="mega-level-3">';
+        foreach ($children2 as $child2) {
+          $title3 = $child2['link']['link_title'];
+          $l3_class = better_mm_get_li_class($key3, $children2);
+          if ($child2['link']['href'] == '<front>') {
+            $url3 = url('<front>');
+          } else {
+            $url3 = '/' . drupal_get_path_alias($child2['link']['href']);
+          }
+          $result .= '<li class="' . $l3_class . '"><a href="' . $url3 . '">' . $title3 . '</a></li>';
+          $key3++;
+        } // foreach child2
+        $result .= '</ul></li>';
+      } else {
+        $result .= '</li>';
+      }
+    } // foreach child
+    $result .= '</ul></li>';
+  } else {
+    $result .= '</li>';
+  }
+  return $result;
+}
+
+// ================================
+// = Implements hook_block_info() =
+// ================================
+
+function better_mm_block_info() {
+  $blocks = array();
+  $blocks['better_mm_menu_block'] = array(
+    'info' => t('Better Mega Menu Block'),
+  );
+  
+  return $blocks;
+}
+
+// ================================
+// = Implements hook_block_view() =
+// ================================
+
+function better_mm_block_view($delta = '') {
+  $block = array();
+  
+  switch ($delta) {
+    case 'better_mm_menu_block':
+    $block['subject'] = '';
+    $block['content'] = variable_get('bmm_block_content', '');
+    break;
+  }
+  return $block;
 }
