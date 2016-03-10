@@ -227,7 +227,9 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       if ($style == 'advanced') {
         // Generate HTML for advanced item drop down.
         if (!empty($adv_content)) {
+          $html .= '<ul class="mega-level-2 ' . $style . '">';
           $html .= '<div class="inner row">' . $adv_content . '</div> <!-- end inner row -->';
+          $html .= '</ul>';
         }
         $html .= '</li>';
       }
