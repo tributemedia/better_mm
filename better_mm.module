@@ -233,13 +233,14 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       }
       if (($style == 'wide') || ($style == 'standard')) {
         // Generate HTMl for the children of wide or standard items.
-        $html .= better_mm_menu_item_tree($style, $children);
+        $html .= better_mm_menu_item_tree($style, $children, $fid);
       }
       $key++;
     } // foreach menu_item
     $html .= '</ul>';
   }
   variable_set('bmm_block_content', $html);
+  dsm($html, 'html');
 }
 
 // ==================================================
@@ -326,11 +327,24 @@ function better_mm_get_child_class($children, $style = 'standard') {
 // = Build menu item tree HTML =
 // =============================
 
-function better_mm_menu_item_tree($style, $children) {
+function better_mm_menu_item_tree($style, $children, $fid) {
   $result = '';
+  $file = array();
+  if (!empty($fid)) {
+    if (is_numeric($fid)) {
+      $file = file_load($fid);
+      $uri = $file->uri;
+      $file_url = file_create_url($uri);
+      $inline_css = 'background-image: url(' . $file_url . '); background-repeat: no-repeat; background-position: 0 0;';
+    }
+  }
   if (!empty($children)) {
     $key2 = 0;
-    $result .= '<ul class="mega-level-2 ' . $style . '">';
+    $result .= '<ul class="mega-level-2 ' . $style . '"';
+    if (!empty($file)) {
+      $result .= ' style="' . $inline_css . '"';
+    }
+    $result .= '>';
     foreach ($children as $child) {
       $title2 = $child['link']['link_title'];
       $children2 = better_mm_get_children($child['link']);
