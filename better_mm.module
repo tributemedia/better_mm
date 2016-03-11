@@ -270,7 +270,7 @@ function better_mm_get_options($item) {
 
 function better_mm_get_children($menu_item) {
   if ($menu_item['href'] == '<front>') {
-    $path = '/';
+    $path = url('<front>');
   } else {
     $path = $menu_item['href'];
   }
