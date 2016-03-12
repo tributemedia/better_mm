@@ -40,6 +40,9 @@ function better_mm_menu() {
 // ================================
 
 function better_mm_admin_settings($form, &$form_state) {
+  $phone = '<div class="tel"><a href="tel:+12084890123">208.489.0123</a></div></span></div>';
+  $mobile_default = variable_get('bmm_menu_below_mobile_nav');
+  $mobile_default = !empty($mobile_default['value']) ? $mobile_default['value'] : $phone;
   $wide_access = FALSE;
   $mega_access = FALSE;
   
@@ -60,7 +63,6 @@ function better_mm_admin_settings($form, &$form_state) {
     '#prefix' => '<div id="bmm-menu-items">',
     '#suffix' => '</div>',
     '#type' => 'fieldset',
-    '#description' => t('Description here.'),
   );
   $form['bmm_menu_items_fieldset']['description_fieldset'] = array(
     '#type' => 'fieldset',
@@ -81,7 +83,7 @@ function better_mm_admin_settings($form, &$form_state) {
     '#value' => $menu_items,
   );
   foreach ($menu_items as $menu_item) {
-    // variables
+    // menu item variables
     $item_name = $menu_item['title'];
     $item_machine_name = str_replace(' ', '-', strtolower($item_name));
     $menu_item_fieldset = 'bmm_menu_item_' . $item_machine_name;
@@ -114,6 +116,8 @@ function better_mm_admin_settings($form, &$form_state) {
       '#prefix' => '<div id="bmm-style-settings-' . $item_machine_name . '" class="bmm-style-settings">',
       '#suffix' => '</div>',
     );
+    
+    $nolink_default = variable_get('bmm_menu_item_' . $item_machine_name . '_nolink', '');
     $saved_style = variable_get('bmm_style_' . $item_machine_name, 'standard');
     $bmm_item_style = !empty($form_state['triggering_element']['#value']) ? 
       $form_state['triggering_element']['#value'] : $saved_style;
@@ -135,6 +139,12 @@ function better_mm_admin_settings($form, &$form_state) {
       $wide_access = FALSE;
     }
     
+    $form['bmm_menu_items_fieldset'][$menu_item_fieldset][$style_settings_fieldset]['bmm_menu_item_' . $item_machine_name . '_nolink'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('No link'),
+      '#description' => t('Check this box to remove the link on this item.'),
+      '#default_value' => $nolink_default,
+    );
     $form['bmm_menu_items_fieldset'][$menu_item_fieldset][$style_settings_fieldset]['bmm_menu_item_' . $item_machine_name . '_wide_setting'] = array(
       '#access' => $wide_access,
       '#type' => 'managed_file',
@@ -159,6 +169,56 @@ function better_mm_admin_settings($form, &$form_state) {
       '#default_value' => $mega_default,
       '#format' => 'full_html',
       '#rows' => 10,
+    );
+  }
+  $form['bmm_menu_mobile_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Mobile Settings'),
+  );
+  $form['bmm_menu_mobile_fieldset']['bmm_menu_below_mobile_nav'] = array(
+    '#type' => 'text_format',
+    '#title' => t('Content Below Mobile Navigation Button'),
+    '#description' => t('Enter content you want displayed under the mobile navigation button.'),
+    '#default_value' => $mobile_default,
+    '#format' => 'full_html',
+  );
+  $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Mobile Secondary Items'),
+    '#collapsible' => TRUE,
+  );
+  $form['#tree'] = TRUE;
+  
+  if (empty($form_state['number_items'])) {
+    $form_state['number_items'] = 1;
+  }
+  
+  for ($i = 1; $i <= $form_state['number_items']; $i++) {
+    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['bmm_menu_mobile_secondary_fieldset'][$i] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Secondary Item ' . $i),
+    );
+    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['bmm_menu_mobile_secondary_fieldset'][$i]['title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Item Title'),
+      '#size' => 20,
+    );
+    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['bmm_menu_mobile_secondary_fieldset'][$i]['href'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Item URL'),
+      '#description' => t('Use Drupal internal path, or absolute URL'),
+    );
+    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['bmm_menu_mobile_secondary_fieldset'][$i]['class'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Item Class'),
+      '#description' => t('Enter any classes you want added to this menu item.'),
+    );
+  }
+  if ($i < 6) {
+    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['add_item'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add another item'),
+      '#submit' => array('better_mm_add_item'),
     );
   }
   $form['#submit'][] = 'better_mm_admin_settings_submit';
@@ -187,19 +247,42 @@ function better_mm_style_ajax_callback($form, $form_state) {
   return $form[$index[0]][$index[1]]['bmm_menu_' . $menu_item . '_style_settings_subset'];
 }
 
+// ===========================
+// = Add item submit handler =
+// ===========================
+
+function better_mm_add_item($form, &$form_state) {
+  $form_state['number_items']++;
+  $form_state['rebuild'] = TRUE;
+}
+
 // ==============================
 // = Admin form submit handler =
 // ==============================
 
 function better_mm_admin_settings_submit(&$form, &$form_state) {
+  $below_mobile_nav = !empty($form_state['values']['bmm_menu_below_mobile_nav']['value']) ? 
+    $form_state['values']['bmm_menu_below_mobile_nav']['value'] : '';
   $menu_items = !empty($form_state['values']['menu_items']) ? $form_state['values']['menu_items'] : '';
   $key = 0;
   $html = '<ul class="mega-menu mega-level-1 first hide-on-med-and-down">';
-  
+  $mobile_html = '<ul id="nav-mobile" class="side-nav">
+        <div class="side-nav-header">
+          <ul class="mobile-secondary">
+            <li><div class="table"><div class="table-cell"><a href="/" class="light home"></a></div></div></li>
+            <li><div class="table"><div class="table-cell"><a href="/contact" class="light contact"></a></div></div></li>
+            <li><div class="table"><div class="table-cell"><a href="/typography" class="">Typo Graphy</a></div></div></li>
+            <li><div class="table"><div class="table-cell"><a href="#!">Other Link</a></div></div></li>
+            <li><div class="table"><div class="table-cell"><a href="#!">No More Than 5</a></div></div></li>
+          </ul>
+        </div>';
+  $mobile_html .= '<ul class="main-menu-navigation">';
+    
   if (!empty($menu_items)) {
     foreach ($menu_items as $menu_item) {
       $title = str_replace(' ', '-', strtolower($menu_item['title']));
       $style = $form_state['values']['bmm_style_' . $title];
+      $nolink = $form_state['values']['bmm_menu_item_' . $title . '_nolink'];
       $fid = !empty($form_state['values']['bmm_menu_item_' . $title . '_wide_setting']) ? 
         $form_state['values']['bmm_menu_item_' . $title . '_wide_setting'] : '';
       $adv_content = !empty($form_state['values']['bmm_menu_item_' . $title . '_mega_setting']['value']) ?
@@ -217,12 +300,28 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       
       // If a file has been uploaded, set file status to permanent.
       if (is_numeric($fid)) {
+        $item = menu_get_item($menu_item['href']);
+        $mlid = db_select('menu_links' , 'ml')
+          ->condition('ml.link_path' , $item['href'])
+          ->fields('ml' , array('mlid'))
+          ->execute()
+          ->fetchField();
         $file = file_load($fid);
         $file->status = FILE_STATUS_PERMANENT;
         file_save($file);
+        file_usage_add($file, 'better_mm', 'menu-item', $mlid);
       }
       
-      $html .= '<li class="' . $class_list . '"><a href="' . $url . '">' . $menu_item['title'] . '</a>';
+      $html .= '<li class="' . $class_list . '"><a';
+      $mobile_html .= '<li class="' . $class_list . '"><a';
+      if ($nolink) {
+        $html .= '>' . $menu_item['title'] . '</a>';
+        $mobile_html .= '>' . $menu_item['title'] . '</a>';
+      }
+      if (!$nolink) {
+        $html .= ' href="' . $url . '">' . $menu_item['title'] . '</a>';
+        $mobile_html .= ' href="' . $url . '">' . $menu_item['title'] . '</a>';
+      }
       
       if ($style == 'advanced') {
         // Generate HTML for advanced item drop down.
@@ -237,12 +336,26 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
         // Generate HTMl for the children of wide or standard items.
         $html .= better_mm_menu_item_tree($style, $children, $fid);
       }
+      $mobile_html .= better_mm_menu_item_tree($style, $children, $fid, TRUE);
       $key++;
     } // foreach menu_item
     $html .= '</ul>';
+    $mobile_html .= '</ul>';
+    $mobile_html .= '<div class="side-nav-footer center-align">
+          &copy; Site Name
+        </div>
+      </ul>';
+    // Add mobile nav button.
+    $html .= '<span class="nav-button valign-wrapper hide-on-large-only">';
+    $html .= '<div class="valign">';
+    $html .= '<a href="#" data-activates="nav-mobile" class="button-collapse">';
+    $html .= '<i class="material-icons">menu</i><span class="menu-text">menu</span></a>';
+    // Add mobile code below mobile nav button.
+    $html .= $below_mobile_nav;
   }
   variable_set('bmm_block_content', $html);
-  dsm($html, 'html');
+  variable_set('bmm_mobile_block_content', $mobile_html);
+  //dsm($mobile_html, 'mobile html');
 }
 
 // ==================================================
@@ -329,21 +442,31 @@ function better_mm_get_child_class($children, $style = 'standard') {
 // = Build menu item tree HTML =
 // =============================
 
-function better_mm_menu_item_tree($style, $children, $fid) {
+function better_mm_menu_item_tree($style, $children, $fid, $mobile = FALSE) {
   $result = '';
-  $file = array();
-  if (!empty($fid)) {
-    if (is_numeric($fid)) {
-      $file = file_load($fid);
-      $uri = $file->uri;
-      $file_url = file_create_url($uri);
-      $inline_css = 'background-image: url(' . $file_url . '); background-repeat: no-repeat; background-position: 0 0;';
+  if (!$mobile) {
+    $file = new stdClass();
+    $inline_css = '';
+    if ($style == 'wide' && !empty($fid)) {
+      if (is_numeric($fid)) {
+        $file = file_load($fid);
+        $uri = $file->uri;
+        $file_url = file_create_url($uri);
+        $inline_css = 'background-image: url(' . $file_url . '); background-repeat: no-repeat; background-position: 0 0;';
+      }
     }
+    $ul_class = 'mega-level-';
+  }
+  if ($mobile) {
+    $ul_class = 'mobile-level-';
   }
   if (!empty($children)) {
     $key2 = 0;
-    $result .= '<ul class="mega-level-2 ' . $style . '"';
-    if (!empty($file)) {
+    if ($mobile) {
+      $result .= '<div class="plus-button"></div>';
+    }
+    $result .= '<ul class="' . $ul_class . '2 ' . $style . '"';
+    if (!empty($inline_css)) {
       $result .= ' style="' . $inline_css . '"';
     }
     $result .= '>';
@@ -362,7 +485,7 @@ function better_mm_menu_item_tree($style, $children, $fid) {
       $key2++;
       if (!empty($children2)) {
         $key3 = 0;
-        $result .= '<div class="plus-button"></div><ul class="mega-level-3">';
+        $result .= '<div class="plus-button"></div><ul class="' . $ul_class . '3">';
         foreach ($children2 as $child2) {
           $title3 = $child2['link']['link_title'];
           $l3_class = better_mm_get_li_class($key3, $children2);
@@ -395,6 +518,9 @@ function better_mm_block_info() {
   $blocks['better_mm_menu_block'] = array(
     'info' => t('Better Mega Menu Block'),
   );
+  $blocks['better_mm_mobile_block'] = array(
+    'info' => t('Better Mega Menu Mobile Block'),
+  );
   
   return $blocks;
 }
@@ -410,6 +536,11 @@ function better_mm_block_view($delta = '') {
     case 'better_mm_menu_block':
     $block['subject'] = '';
     $block['content'] = variable_get('bmm_block_content', '');
+    break;
+    
+    case 'better_mm_mobile_block':
+    $block['subject'] = '';
+    $block['content'] = variable_get('bmm_mobile_block_content', '');
     break;
   }
   return $block;
