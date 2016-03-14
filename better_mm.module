@@ -122,10 +122,13 @@ function better_mm_admin_settings($form, &$form_state) {
     $bmm_item_style = !empty($form_state['triggering_element']['#value']) ? 
       $form_state['triggering_element']['#value'] : $saved_style;
     
-    if (($bmm_item_style == 'Upload') || ($bmm_item_style == 'Remove')) {
-      $bmm_item_style = 'wide';
+    if (!empty($form_state['triggering_element']['#value'])) {
+      if ($form_state['triggering_element']['#value'] == 'Upload' || 
+        $form_state['triggering_element']['#value'] == 'Remove' || 
+        $form_state['triggering_element']['#value'] == 'Add item') {
+          $bmm_item_style = $saved_style;
+      }
     }
-        
     if ($bmm_item_style == 'standard') {
       $wide_access = FALSE;
       $mega_access = FALSE;
@@ -171,53 +174,71 @@ function better_mm_admin_settings($form, &$form_state) {
       '#rows' => 10,
     );
   }
-  $form['bmm_menu_mobile_fieldset'] = array(
+  $index1 = 'bmm_menu_mobile_fieldset';
+  $index2 = 'secondary_items_fieldset';
+  $index3 = 'bmm_menu_mobile_secondary_fieldset';
+  $form[$index1] = array(
     '#type' => 'fieldset',
     '#title' => t('Mobile Settings'),
   );
-  $form['bmm_menu_mobile_fieldset']['bmm_menu_below_mobile_nav'] = array(
+  $form[$index1]['bmm_menu_below_mobile_nav'] = array(
     '#type' => 'text_format',
     '#title' => t('Content Below Mobile Navigation Button'),
     '#description' => t('Enter content you want displayed under the mobile navigation button.'),
     '#default_value' => $mobile_default,
     '#format' => 'full_html',
   );
-  $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset'] = array(
+  $form[$index1][$index2] = array(
     '#type' => 'fieldset',
     '#title' => t('Mobile Secondary Items'),
+    '#description' => t('Add up to five secondary menu items, to display in the header area of the mobile menu.'),
     '#collapsible' => TRUE,
   );
-  $form['#tree'] = TRUE;
+  $form[$index1][$index2][$index3] = array(
+    '#tree' => TRUE,
+  );
   
-  if (empty($form_state['number_items'])) {
-    $form_state['number_items'] = 1;
-  }
+  $number_items = variable_get('bmm_number_items', 0);
+  $form_state['number_items'] = $number_items;
+  $secondary_items = variable_get('bmm_menu_mobile_secondary_fieldset');
   
-  for ($i = 1; $i <= $form_state['number_items']; $i++) {
-    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['bmm_menu_mobile_secondary_fieldset'][$i] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Secondary Item ' . $i),
-    );
-    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['bmm_menu_mobile_secondary_fieldset'][$i]['title'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Item Title'),
-      '#size' => 20,
-    );
-    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['bmm_menu_mobile_secondary_fieldset'][$i]['href'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Item URL'),
-      '#description' => t('Use Drupal internal path, or absolute URL'),
-    );
-    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['bmm_menu_mobile_secondary_fieldset'][$i]['class'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Item Class'),
-      '#description' => t('Enter any classes you want added to this menu item.'),
-    );
+  if ($number_items > 0) {
+    for ($i = 1; $i <= $number_items; $i++) {
+      $form[$index1][$index2][$index3][$i] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Secondary Item ' . $i),
+        '#collapsible' => TRUE,
+      );
+      $form[$index1][$index2][$index3][$i]['bmm_title_' . $i] = array(
+        '#type' => 'textfield',
+        '#title' => t('Item Title'),
+        '#default_value' => $secondary_items[$i]['bmm_title_' . $i],
+      );
+      $form[$index1][$index2][$index3][$i]['bmm_href_' . $i] = array(
+        '#type' => 'textfield',
+        '#title' => t('Item URL'),
+        '#description' => t('Use Drupal internal path, or absolute URL'),
+        '#default_value' => $secondary_items[$i]['bmm_href_' . $i],
+      );
+      $form[$index1][$index2][$index3][$i]['bmm_class_' . $i] = array(
+        '#type' => 'textfield',
+        '#title' => t('Item Class'),
+        '#description' => t('Enter any classes you want added to this menu item.'),
+        '#default_value' => $secondary_items[$i]['bmm_class_' . $i],
+      );
+      // if ($i > 0) {
+      //   $form[$index1][$index2][$index3][$i]['remove_item_' . $i] = array(
+      //     '#type' => 'submit',
+      //     '#value' => t('Remove Item ' . $i),
+      //     '#submit' => array('better_mm_remove_item'),
+      //   );
+      // }
+    }
   }
-  if ($i < 6) {
-    $form['bmm_menu_mobile_fieldset']['secondary_items_fieldset']['add_item'] = array(
+  if ($number_items < 5) {
+    $form[$index1][$index2]['add_item'] = array(
       '#type' => 'submit',
-      '#value' => t('Add another item'),
+      '#value' => t('Add item'),
       '#submit' => array('better_mm_add_item'),
     );
   }
@@ -253,8 +274,36 @@ function better_mm_style_ajax_callback($form, $form_state) {
 
 function better_mm_add_item($form, &$form_state) {
   $form_state['number_items']++;
+  variable_set('bmm_number_items', $form_state['number_items']);
   $form_state['rebuild'] = TRUE;
 }
+
+// ==============================
+// = Remove item submit handler =
+// ==============================
+
+// function better_mm_remove_item($form, &$form_state) {
+//   dsm($form_state, 'Remove Item Form State');
+//   $trigger = $form_state['triggering_element']['#parents'][0];dsm($trigger, 'Triggering Button');
+//   $trigger = explode('_', $trigger);
+//   $remove_index = $trigger['2'];dsm($remove_index);
+//   $total_items = $form_state['number_items'];dsm($total_items, 'total items');
+//   for ($i = $remove_index; $i <= $total_items; $i++) {
+//     if ($i < $total_items) {$next = $i + 1;dsm($next, 'next');
+//       $form_state['values']['bmm_title_' . $i] = $form_state['values']['bmm_title_' . $next];
+//       $form_state['values']['bmm_href_' . $i] = $form_state['values']['bmm_href_' . $next];
+//       $form_state['values']['bmm_class_' . $i] = $form_state['values']['bmm_class_' . $next];
+//     }
+//     if ($i == $total_items) {
+//       $form_state['values']['bmm_title_' . $i] = '';
+//       $form_state['values']['bmm_href_' . $i] = '';
+//       $form_state['values']['bmm_class_' . $i] = '';
+//     }
+//   }
+//   $form_state['number_items']--;
+//   variable_set('bmm_number_items', $form_state['number_items']);
+//   $form_state['rebuild'] = TRUE;
+// }
 
 // ==============================
 // = Admin form submit handler =
@@ -266,27 +315,19 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
   $menu_items = !empty($form_state['values']['menu_items']) ? $form_state['values']['menu_items'] : '';
   $key = 0;
   $html = '<ul class="mega-menu mega-level-1 first hide-on-med-and-down">';
-  $mobile_html = '<ul id="nav-mobile" class="side-nav">
-        <div class="side-nav-header">
-          <ul class="mobile-secondary">
-            <li><div class="table"><div class="table-cell"><a href="/" class="light home"></a></div></div></li>
-            <li><div class="table"><div class="table-cell"><a href="/contact" class="light contact"></a></div></div></li>
-            <li><div class="table"><div class="table-cell"><a href="/typography" class="">Typo Graphy</a></div></div></li>
-            <li><div class="table"><div class="table-cell"><a href="#!">Other Link</a></div></div></li>
-            <li><div class="table"><div class="table-cell"><a href="#!">No More Than 5</a></div></div></li>
-          </ul>
-        </div>';
+  $mobile_html = '<ul id="nav-mobile" class="side-nav">';
+  $mobile_html .= better_mm_mobile_secondary_html();dsm($mobile_html, 'mobile header');
   $mobile_html .= '<ul class="main-menu-navigation">';
-    
+  
   if (!empty($menu_items)) {
     foreach ($menu_items as $menu_item) {
-      $title = str_replace(' ', '-', strtolower($menu_item['title']));
-      $style = $form_state['values']['bmm_style_' . $title];
-      $nolink = $form_state['values']['bmm_menu_item_' . $title . '_nolink'];
-      $fid = !empty($form_state['values']['bmm_menu_item_' . $title . '_wide_setting']) ? 
-        $form_state['values']['bmm_menu_item_' . $title . '_wide_setting'] : '';
-      $adv_content = !empty($form_state['values']['bmm_menu_item_' . $title . '_mega_setting']['value']) ?
-        $form_state['values']['bmm_menu_item_' . $title . '_mega_setting']['value'] : '';
+      $item_title = str_replace(' ', '-', strtolower($menu_item['title']));
+      $style = $form_state['values']['bmm_style_' . $item_title];
+      $nolink = $form_state['values']['bmm_menu_item_' . $item_title . '_nolink'];
+      $fid = !empty($form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting']) ? 
+        $form_state['values']['bmm_menu_item_' . $item_title . '_wide_setting'] : '';
+      $adv_content = !empty($form_state['values']['bmm_menu_item_' . $item_title . '_mega_setting']['value']) ?
+        $form_state['values']['bmm_menu_item_' . $item_title . '_mega_setting']['value'] : '';
       $children = better_mm_get_children($menu_item);
       $l1_class = better_mm_get_li_class($key, $menu_items);
       $child_class = better_mm_get_child_class($children, $style);
@@ -505,6 +546,33 @@ function better_mm_menu_item_tree($style, $children, $fid, $mobile = FALSE) {
     $result .= '</ul></li>';
   } else {
     $result .= '</li>';
+  }
+  return $result;
+}
+
+// ====================================
+// = Build Mobile Secondary Menu HTML =
+// ====================================
+
+function better_mm_mobile_secondary_html() {
+  $secondary_items = variable_get('bmm_menu_mobile_secondary_fieldset', '');
+  $result = '';
+  
+  if (!empty($secondary_items)) {
+    $result .= '<div class="side-nav-header">';
+    $result .= '<ul class="mobile-secondary">';
+    foreach ($secondary_items as $key => $menu_item) {
+      $link_title = $menu_item['bmm_title_' . $key];
+      $href = $menu_item['bmm_href_' . $key];
+      if ($href == '<front>') {
+        $href = url('<front>');
+      }
+      $class = $menu_item['bmm_class_' . $key];
+      $result .= '<li><div class="table"><div class="table-cell">';
+      $result .= '<a href="/' . $href . '" class="' . $class . '">' . $link_title . '</a>';
+      $result .= '</div></div></li>';
+    }
+    $result .= '</ul></div>';
   }
   return $result;
 }
