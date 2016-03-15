@@ -41,6 +41,9 @@ function better_mm_menu() {
 
 function better_mm_admin_settings($form, &$form_state) {
   $site_name = variable_get('site_name', 'Site Name');
+  $help_text = '<div id="better-mm-help-text">There are two blocks that will need to be configured for your Better Mega Menu.';
+  $help_text .= '<ol><li>Better Mega Menu Block can be placed in any desirable region of your site, but generally, it is placed in the "Mega menu" region.</li>';
+  $help_text .= '<li>Better Mega Menu Mobile Block should be placed in the "Footer" region.</li></ol></div>';
   $phone = '<div class="tel"><a href="tel:+12084890123">208.489.0123</a></div></span></div>';
   $mobile_default = variable_get('bmm_menu_below_mobile_nav');
   $mobile_default = !empty($mobile_default['value']) ? $mobile_default['value'] : $phone;
@@ -74,7 +77,7 @@ function better_mm_admin_settings($form, &$form_state) {
   );
   $form['bmm_menu_items_fieldset']['description_fieldset']['description'] = array(
     '#type' => 'markup',
-    '#markup' => '<div id="better-mm-help-text">You can put some helpful text here.</div>',
+    '#markup' => $help_text,
   );
   
   $menu_selection = !empty($form_state['values']['bmm_menu']) ? $form_state['values']['bmm_menu'] : 'main-menu';
@@ -215,6 +218,7 @@ function better_mm_admin_settings($form, &$form_state) {
       $form[$index1][$index2][$index3][$i]['bmm_title_' . $i] = array(
         '#type' => 'textfield',
         '#title' => t('Item Title'),
+        '#description' => t('Leave blank if adding a class for an icon.'),
         '#default_value' => $secondary_items[$i]['bmm_title_' . $i],
       );
       $form[$index1][$index2][$index3][$i]['bmm_href_' . $i] = array(
@@ -229,13 +233,13 @@ function better_mm_admin_settings($form, &$form_state) {
         '#description' => t('Enter any classes you want added to this menu item.'),
         '#default_value' => $secondary_items[$i]['bmm_class_' . $i],
       );
-      // if ($i > 0) {
-      //   $form[$index1][$index2][$index3][$i]['remove_item_' . $i] = array(
-      //     '#type' => 'submit',
-      //     '#value' => t('Remove Item ' . $i),
-      //     '#submit' => array('better_mm_remove_item'),
-      //   );
-      // }
+      if ($i > 0) {
+        $form[$index1][$index2]['remove_item'] = array(
+          '#type' => 'submit',
+          '#value' => t('Remove'),
+          '#submit' => array('better_mm_remove_item'),
+        );
+      }
     }
   }
   if ($number_items < 5) {
@@ -252,9 +256,13 @@ function better_mm_admin_settings($form, &$form_state) {
     '#default_value' => $footer_default,
     '#format' => 'full_html',
   );
-  $form['#submit'][] = 'better_mm_admin_settings_submit';
-
-  return system_settings_form($form);
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save Configuration'),
+    '#submit' => array('better_mm_admin_settings_submit'),
+  );
+  
+  return $form;
 }
 
 // ==================================================
@@ -272,8 +280,10 @@ function better_mm_menu_items_ajax_callback($form, $form_state) {
 function better_mm_style_ajax_callback($form, $form_state) {
   $index = $form_state['triggering_element']['#array_parents'];
   $menu_item = $form_state['triggering_element']['#name'];
+  $style = $form_state['triggering_element']['#value'];
   $menu_item = explode('_', $menu_item);
   $menu_item = $menu_item[2];
+  variable_set('bmm_style_' . $menu_item, $style);
   
   return $form[$index[0]][$index[1]]['bmm_menu_' . $menu_item . '_style_settings_subset'];
 }
@@ -292,39 +302,40 @@ function better_mm_add_item($form, &$form_state) {
 // = Remove item submit handler =
 // ==============================
 
-// function better_mm_remove_item($form, &$form_state) {
-//   dsm($form_state, 'Remove Item Form State');
-//   $trigger = $form_state['triggering_element']['#parents'][0];dsm($trigger, 'Triggering Button');
-//   $trigger = explode('_', $trigger);
-//   $remove_index = $trigger['2'];dsm($remove_index);
-//   $total_items = $form_state['number_items'];dsm($total_items, 'total items');
-//   for ($i = $remove_index; $i <= $total_items; $i++) {
-//     if ($i < $total_items) {$next = $i + 1;dsm($next, 'next');
-//       $form_state['values']['bmm_title_' . $i] = $form_state['values']['bmm_title_' . $next];
-//       $form_state['values']['bmm_href_' . $i] = $form_state['values']['bmm_href_' . $next];
-//       $form_state['values']['bmm_class_' . $i] = $form_state['values']['bmm_class_' . $next];
-//     }
-//     if ($i == $total_items) {
-//       $form_state['values']['bmm_title_' . $i] = '';
-//       $form_state['values']['bmm_href_' . $i] = '';
-//       $form_state['values']['bmm_class_' . $i] = '';
-//     }
-//   }
-//   $form_state['number_items']--;
-//   variable_set('bmm_number_items', $form_state['number_items']);
-//   $form_state['rebuild'] = TRUE;
-// }
+function better_mm_remove_item($form, &$form_state) {
+  $form_state['number_items']--;
+  variable_set('bmm_number_items', $form_state['number_items']);
+  $form_state['rebuild'] = TRUE;
+}
 
 // ==============================
 // = Admin form submit handler =
 // ==============================
 
 function better_mm_admin_settings_submit(&$form, &$form_state) {
+  // Set variables
+  variable_set('bmm_menu', $form_state['values']['bmm_menu']);
+  variable_set('bmm_menu_below_mobile_nav', $form_state['values']['bmm_menu_below_mobile_nav']);
+  variable_set('bmm_menu_mobile_footer', $form_state['values']['bmm_menu_mobile_footer']);
+  variable_set('bmm_menu_mobile_secondary_fieldset', $form_state['values']['bmm_menu_mobile_secondary_fieldset']);
+  $menu_items = !empty($form_state['values']['menu_items']) ? $form_state['values']['menu_items'] : '';
+  foreach ($menu_items as $menu_item) {
+    $item_name = str_replace(' ', '-', strtolower($menu_item['title']));
+    $style = 'bmm_style_' . $item_name;
+    $nolink = 'bmm_menu_item_' . $item_name . '_nolink';
+    $wide_setting = 'bmm_menu_item_' . $item_name . '_wide_setting';
+    $mega_setting = 'bmm_menu_item_' . $item_name . '_mega_setting';
+    variable_set($style, $form_state['values'][$style]);
+    variable_set($nolink, $form_state['values'][$nolink]);
+    variable_set($wide_setting, $form_state['values'][$wide_setting]);
+    variable_set($mega_setting, $form_state['values'][$mega_setting]);
+  }
+  
+  // Build HTML for blocks
   $below_mobile_nav = !empty($form_state['values']['bmm_menu_below_mobile_nav']['value']) ? 
     $form_state['values']['bmm_menu_below_mobile_nav']['value'] : '';
   $mobile_footer = !empty($form_state['values']['bmm_menu_mobile_footer']['value']) ? 
     $form_state['values']['bmm_menu_mobile_footer']['value'] : '';
-  $menu_items = !empty($form_state['values']['menu_items']) ? $form_state['values']['menu_items'] : '';
   $key = 0;
   $html = '<ul class="mega-menu mega-level-1 first hide-on-med-and-down">';
   $mobile_html = '<ul id="nav-mobile" class="side-nav">';
