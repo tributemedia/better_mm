@@ -40,9 +40,11 @@ function better_mm_menu() {
 // ================================
 
 function better_mm_admin_settings($form, &$form_state) {
+  $site_name = variable_get('site_name', 'Site Name');
   $phone = '<div class="tel"><a href="tel:+12084890123">208.489.0123</a></div></span></div>';
   $mobile_default = variable_get('bmm_menu_below_mobile_nav');
   $mobile_default = !empty($mobile_default['value']) ? $mobile_default['value'] : $phone;
+  $footer_default = '<div class="side-nav-footer center-align">&copy; ' . $site_name . '</div>';
   $wide_access = FALSE;
   $mega_access = FALSE;
   
@@ -153,10 +155,11 @@ function better_mm_admin_settings($form, &$form_state) {
       '#type' => 'managed_file',
       '#title' => t('Image Upload'),
       '#size' => 40,
-      '#description' => t('Select an image that is at least @dimensionspx and maximum @filesize. Allowed extensions: png jpg jpeg',
+      '#description' => t('For best results, select an image that is at least @dimensionspx wide. Larger images can be uploaded to create a full image background in the drop down. Max file size: @filesize. Allowed Extensions: @extensions',
       array(
-        '@dimensions' => '100x100',
+        '@dimensions' => '200',
         '@filesize' => format_size(file_upload_max_size()),
+        '@extensions' => 'png jpg jpeg',
       )),
 	  '#upload_validators' => array(
         'file_validate_extensions' => array('png jpg jpeg'),
@@ -242,6 +245,13 @@ function better_mm_admin_settings($form, &$form_state) {
       '#submit' => array('better_mm_add_item'),
     );
   }
+  $form[$index1]['bmm_menu_mobile_footer'] = array(
+    '#type' => 'text_format',
+    '#title' => t('Mobile Menu Footer Content'),
+    '#description' => t('Enter content you want displayed under the mobile menu.'),
+    '#default_value' => $footer_default,
+    '#format' => 'full_html',
+  );
   $form['#submit'][] = 'better_mm_admin_settings_submit';
 
   return system_settings_form($form);
@@ -312,11 +322,13 @@ function better_mm_add_item($form, &$form_state) {
 function better_mm_admin_settings_submit(&$form, &$form_state) {
   $below_mobile_nav = !empty($form_state['values']['bmm_menu_below_mobile_nav']['value']) ? 
     $form_state['values']['bmm_menu_below_mobile_nav']['value'] : '';
+  $mobile_footer = !empty($form_state['values']['bmm_menu_mobile_footer']['value']) ? 
+    $form_state['values']['bmm_menu_mobile_footer']['value'] : '';
   $menu_items = !empty($form_state['values']['menu_items']) ? $form_state['values']['menu_items'] : '';
   $key = 0;
   $html = '<ul class="mega-menu mega-level-1 first hide-on-med-and-down">';
   $mobile_html = '<ul id="nav-mobile" class="side-nav">';
-  $mobile_html .= better_mm_mobile_secondary_html();dsm($mobile_html, 'mobile header');
+  $mobile_html .= better_mm_mobile_secondary_html();
   $mobile_html .= '<ul class="main-menu-navigation">';
   
   if (!empty($menu_items)) {
@@ -381,11 +393,8 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       $key++;
     } // foreach menu_item
     $html .= '</ul>';
+    $mobile_html .= $mobile_footer;
     $mobile_html .= '</ul>';
-    $mobile_html .= '<div class="side-nav-footer center-align">
-          &copy; Site Name
-        </div>
-      </ul>';
     // Add mobile nav button.
     $html .= '<span class="nav-button valign-wrapper hide-on-large-only">';
     $html .= '<div class="valign">';
@@ -563,14 +572,16 @@ function better_mm_mobile_secondary_html() {
     $result .= '<ul class="mobile-secondary">';
     foreach ($secondary_items as $key => $menu_item) {
       $link_title = $menu_item['bmm_title_' . $key];
-      $href = $menu_item['bmm_href_' . $key];
-      if ($href == '<front>') {
+      $href = '/' . $menu_item['bmm_href_' . $key];
+      if ($href == '/<front>') {
         $href = url('<front>');
       }
       $class = $menu_item['bmm_class_' . $key];
-      $result .= '<li><div class="table"><div class="table-cell">';
-      $result .= '<a href="/' . $href . '" class="' . $class . '">' . $link_title . '</a>';
-      $result .= '</div></div></li>';
+      if (!empty($menu_item['bmm_href_' . $key])) {
+        $result .= '<li><div class="table"><div class="table-cell">';
+        $result .= '<a href="' . $href . '" class="' . $class . '">' . $link_title . '</a>';
+        $result .= '</div></div></li>';
+      }
     }
     $result .= '</ul></div>';
   }
