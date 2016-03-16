@@ -41,7 +41,9 @@ function better_mm_menu() {
 
 function better_mm_admin_settings($form, &$form_state) {
   $site_name = variable_get('site_name', 'Site Name');
-  $help_text = '<div id="better-mm-help-text"><strong>There are two blocks that will need to be configured for your Better Mega Menu.</strong>';
+  $help_text = '<div id="better-mm-help-text">';
+  $help_text .= '<p>When you add new items to the menu selected above, you will need to re-save the configuration on this page, to get the item to display in the menu.</p>';
+  $help_text .= '<strong>There are two blocks that will need to be configured for your Better Mega Menu.</strong>';
   $help_text .= '<ol><li>"Better Mega Menu Block" can be placed in any desirable region of your site, but typically, it is placed in the "Mega menu" region.</li>';
   $help_text .= '<li>"Better Mega Menu Mobile Block" should be placed in the "Footer" region.</li></ol>';
   $help_text .= '<strong>There are three types of menu items to choose from.</strong>';
@@ -59,9 +61,10 @@ function better_mm_admin_settings($form, &$form_state) {
   $mega_access = FALSE;
   
   $form['bmm_menu'] = array(
-    '#title' => t('Select Menu'),
+    '#title' => t('Menu'),
     '#type' => 'select',
     '#options' => better_mm_get_options('menus'),
+    '#description' => t('Select the menu you wish to configure.'),
     '#default_value' => variable_get('bmm_menu', 'main-menu'),
     '#ajax' => array(
       'callback' => 'better_mm_menu_items_ajax_callback',
@@ -398,6 +401,7 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
   variable_set('bmm_block_content', $html);
   variable_set('bmm_mobile_block_content', $mobile_html);
   //dsm($mobile_html, 'mobile html');
+  drupal_set_message('Configuration settings have been saved.');
 }
 
 // ==================================================
