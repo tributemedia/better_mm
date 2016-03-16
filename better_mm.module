@@ -620,3 +620,41 @@ function better_mm_block_view($delta = '') {
   }
   return $block;
 }
+
+// =================================
+// = Implements hook_form_alter(). =
+// =================================
+
+function better_mm_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'menu_edit_item') {
+    $form['#submit'][] = 'better_mm_add_link_submit';
+  }
+}
+
+// ===========================
+// = Add link submit handler =
+// ===========================
+
+function better_mm_add_link_submit(&$form, &$form_state) {
+  dsm($form_state, 'Form State');
+  $menu_name = $form_state['values']['menu_name'];
+  $bmm = variable_get('bmm_menu', '');
+  if ($menu_name == $bmm) {
+    $below_mobile_nav = variable_get('bmm_menu_below_mobile_nav', '');
+    $mobile_footer = variable_get('bmm_menu_mobile_footer', '');
+    $menu_items = menu_navigation_links($bmm);dsm($menu_items, 'Menu Items');
+    foreach ($menu_items as $menu_item) {
+      $item_name = str_replace(' ', '-', strtolower($menu_item['title']));
+      $style = 'bmm_style_' . $item_name;
+      $nolink = 'bmm_menu_item_' . $item_name . '_nolink';
+      $wide_setting = 'bmm_menu_item_' . $item_name . '_wide_setting';
+      $mega_setting = 'bmm_menu_item_' . $item_name . '_mega_setting';
+      $item_style = variable_get($style, 'standard');
+      $item_nolink = variable_get($nolink, '');
+      $item_setting_wide = variable_get($wide_setting, '');
+      $item_setting_mega = variable_get($mega_setting, '');
+      
+      
+    }
+  }
+}
