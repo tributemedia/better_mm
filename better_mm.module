@@ -41,9 +41,14 @@ function better_mm_menu() {
 
 function better_mm_admin_settings($form, &$form_state) {
   $site_name = variable_get('site_name', 'Site Name');
-  $help_text = '<div id="better-mm-help-text">There are two blocks that will need to be configured for your Better Mega Menu.';
-  $help_text .= '<ol><li>Better Mega Menu Block can be placed in any desirable region of your site, but generally, it is placed in the "Mega menu" region.</li>';
-  $help_text .= '<li>Better Mega Menu Mobile Block should be placed in the "Footer" region.</li></ol></div>';
+  $help_text = '<div id="better-mm-help-text"><strong>There are two blocks that will need to be configured for your Better Mega Menu.</strong>';
+  $help_text .= '<ol><li>"Better Mega Menu Block" can be placed in any desirable region of your site, but typically, it is placed in the "Mega menu" region.</li>';
+  $help_text .= '<li>"Better Mega Menu Mobile Block" should be placed in the "Footer" region.</li></ol>';
+  $help_text .= '<strong>There are three types of menu items to choose from.</strong>';
+  $help_text .= '<ol><li>Standard: Will provide a standard menu item with a simple drop down if any children exist. Note: Children under the "Home" menu item will not be rendered.</li>';
+  $help_text .= '<li>Wide: For use with an item that has children. The drop down will include a background image.</li>';
+  $help_text .= '<li>Advanced: Works much like a Mega Menu item. You will provide the HTML for the drop down "block" of the item.</li></ol>';
+  $help_text .= '</div>';
   $phone = '<div class="tel"><a href="tel:+12084890123">208.489.0123</a></div></span></div>';
   $footer = '<div class="side-nav-footer center-align">&copy; ' . $site_name . '</div>';
   $mobile_default = variable_get('bmm_menu_below_mobile_nav');
@@ -75,7 +80,7 @@ function better_mm_admin_settings($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Help'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    //'#collapsed' => TRUE,
   );
   $form['bmm_menu_items_fieldset']['description_fieldset']['description'] = array(
     '#type' => 'markup',
@@ -206,58 +211,43 @@ function better_mm_admin_settings($form, &$form_state) {
     '#tree' => TRUE,
   );
   
-  $number_items = variable_get('bmm_number_items', 0);
-  $form_state['number_items'] = $number_items;
   $secondary_items = variable_get('bmm_menu_mobile_secondary_fieldset');
   
-  if ($number_items > 0) {
-    for ($i = 1; $i <= $number_items; $i++) {
-      $title_default = isset($secondary_items[$i]) ? $secondary_items[$i]['bmm_title_' . $i] : '';
-      $href_default = isset($secondary_items[$i]) ? $secondary_items[$i]['bmm_href_' . $i] : '';
-      $class_default = isset($secondary_items[$i]) ? $secondary_items[$i]['bmm_class_' . $i] : '';
-      $form[$index1][$index2][$index3][$i] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Secondary Item ' . $i),
-        '#collapsible' => TRUE,
-      );
-      $form[$index1][$index2][$index3][$i]['bmm_title_' . $i] = array(
-        '#type' => 'textfield',
-        '#title' => t('Item Title'),
-        '#description' => t('Leave blank if adding a class for an icon.'),
-        '#default_value' => $title_default,
-      );
-      $form[$index1][$index2][$index3][$i]['bmm_href_' . $i] = array(
-        '#type' => 'textfield',
-        '#title' => t('Item URL'),
-        '#description' => t('The path for this menu link. 
-          This can be an internal Drupal path such as %add-node or an external URL such as %drupal. 
-          Enter %front to link to the front page.', array(
-            '%front' => '<front>', 
-            '%add-node' => 'node/add', 
-            '%drupal' => 'http://drupal.org',
-          )),
-        '#default_value' => $href_default,
-      );
-      $form[$index1][$index2][$index3][$i]['bmm_class_' . $i] = array(
-        '#type' => 'textfield',
-        '#title' => t('Item Class'),
-        '#description' => t('Enter any classes you want added to this menu item.'),
-        '#default_value' => $class_default,
-      );
-      if ($i > 0) {
-        $form[$index1][$index2]['remove_item'] = array(
-          '#type' => 'submit',
-          '#value' => t('Remove'),
-          '#submit' => array('better_mm_remove_item'),
-        );
-      }
-    }
-  }
-  if ($number_items < 5) {
-    $form[$index1][$index2]['add_item'] = array(
-      '#type' => 'submit',
-      '#value' => t('Add item'),
-      '#submit' => array('better_mm_add_item'),
+  for ($i = 1; $i <= 5; $i++) {
+    $title_default = isset($secondary_items[$i]) ? $secondary_items[$i]['bmm_title_' . $i] : '';
+    $href_default = isset($secondary_items[$i]) ? $secondary_items[$i]['bmm_href_' . $i] : '';
+    $class_default = isset($secondary_items[$i]) ? $secondary_items[$i]['bmm_class_' . $i] : '';
+    $collapsed = !empty($secondary_items[$i]['bmm_href_' . $i]) ? FALSE : TRUE;
+    
+    $form[$index1][$index2][$index3][$i] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Secondary Item ' . $i),
+      '#collapsible' => TRUE,
+      '#collapsed' => $collapsed,
+    );
+    $form[$index1][$index2][$index3][$i]['bmm_title_' . $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('Item Title'),
+      '#description' => t('Leave blank if adding a class for an icon.'),
+      '#default_value' => $title_default,
+    );
+    $form[$index1][$index2][$index3][$i]['bmm_href_' . $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('Item URL'),
+      '#description' => t('The path for this menu link. 
+        This can be an internal Drupal path such as %add-node or an external URL such as %drupal. 
+        Enter %front to link to the front page.', array(
+          '%front' => '<front>', 
+          '%add-node' => 'node/add', 
+          '%drupal' => 'http://drupal.org',
+        )),
+      '#default_value' => $href_default,
+    );
+    $form[$index1][$index2][$index3][$i]['bmm_class_' . $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('Item Class'),
+      '#description' => t('Enter any classes you want added to this menu item.'),
+      '#default_value' => $class_default,
     );
   }
   $form[$index1]['bmm_menu_mobile_footer'] = array(
@@ -297,26 +287,6 @@ function better_mm_style_ajax_callback($form, $form_state) {
   variable_set('bmm_style_' . $menu_item, $style);
   
   return $form[$index[0]][$index[1]]['bmm_menu_' . $menu_item . '_style_settings_subset'];
-}
-
-// ===========================
-// = Add item submit handler =
-// ===========================
-
-function better_mm_add_item($form, &$form_state) {
-  $form_state['number_items']++;
-  variable_set('bmm_number_items', $form_state['number_items']);
-  $form_state['rebuild'] = TRUE;
-}
-
-// ==============================
-// = Remove item submit handler =
-// ==============================
-
-function better_mm_remove_item($form, &$form_state) {
-  $form_state['number_items']--;
-  variable_set('bmm_number_items', $form_state['number_items']);
-  $form_state['rebuild'] = TRUE;
 }
 
 // ==============================
