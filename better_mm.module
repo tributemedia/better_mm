@@ -137,8 +137,7 @@ function better_mm_admin_settings($form, &$form_state) {
     $item_name = str_replace(' ', '-', strtolower($item_title));
     $item_settings = !empty($menu_settings) ? $menu_settings[$item_name] : $settings_default;
     $adv_default = $item_settings['style_settings']['advanced_setting']['value'];
-    //dsm($item_settings, 'Item Settings');
-    
+        
     // Settings fields for each menu item.
     $form['bmm_menu_items_settings'][$item_name] = array(
       '#type' => 'fieldset',
@@ -186,7 +185,7 @@ function better_mm_admin_settings($form, &$form_state) {
       $adv_access = TRUE;
       $wide_access = FALSE;
     }
-    //dsm($bmm_item_style, $item_name . ' Item Style(182)');
+    
     $form['bmm_menu_items_settings'][$item_name]['style_settings']['nolink'] = array(
       '#type' => 'checkbox',
       '#title' => t('No link'),
@@ -311,7 +310,6 @@ function better_mm_style_ajax_callback($form, $form_state) {
 // ==============================
 
 function better_mm_admin_settings_submit(&$form, &$form_state) {
-  dsm($form_state, 'Form State');
   // Set variables
   variable_set('bmm_menu', $form_state['values']['bmm_menu']);
   variable_set('bmm_menu_items', $form_state['values']['bmm_menu_items']);
@@ -403,8 +401,6 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
   }
   variable_set('bmm_block_content', $html);
   variable_set('bmm_mobile_block_content', $mobile_html);
-  dsm($html, 'html(415)');
-  drupal_set_message('Configuration settings have been saved.');
 }
 
 // ===========================
@@ -426,7 +422,6 @@ function better_mm_add_link_submit(&$form, &$form_state) {
 // =============================================
 
 function better_mm_menu_overview_submit(&$form, &$form_state) {
-  dsm($form_state);
   $menu_name = $form_state['complete form']['#menu']['menu_name'];
   $bmm = variable_get('bmm_menu', '');
   if ($menu_name == $bmm) {
@@ -441,7 +436,6 @@ function better_mm_menu_overview_submit(&$form, &$form_state) {
 // ===============================================
 
 function better_mm_delete_menu_item_submit(&$form, &$form_state) {
-  dsm($form_state);
   $menu_name = $form_state['complete form']['#item']['menu_name'];
   $bmm = variable_get('bmm_menu', '');
   if ($menu_name == $bmm) {
@@ -456,7 +450,7 @@ function better_mm_delete_menu_item_submit(&$form, &$form_state) {
 // =================================================================================
 
 function better_mm_get_block_content($menu_name) {
-  $menu_settings = variable_get('bmm_menu_items_settings', '');dsm($menu_settings);
+  $menu_settings = variable_get('bmm_menu_items_settings', '');
   $mobile_settings = variable_get('bmm_mobile_menu_settings', '');
   $below_mobile_nav = $mobile_settings['below_mobile_nav']['value'];
   $mobile_footer = $mobile_settings['bmm_menu_mobile_footer']['value'];
@@ -516,7 +510,7 @@ function better_mm_get_block_content($menu_name) {
   $html .= '<a href="#" data-activates="nav-mobile" class="button-collapse">';
   $html .= '<i class="material-icons">menu</i><span class="menu-text">menu</span></a>';
   // Add mobile code below mobile nav button.
-  $html .= $below_mobile_nav . '</div></span>';dsm($html, 'html(524)');
+  $html .= $below_mobile_nav . '</div></span>';
   
   return array('html' => $html, 'mobile' => $mobile_html);
 }
