@@ -58,8 +58,10 @@ function better_mm_form_alter(&$form, &$form_state, $form_id) {
 
 function better_mm_admin_settings($form, &$form_state) {
   $site_name = variable_get('site_name', 'Site Name');
+  $menu_name = !empty($form_state['values']['bmm_menu']) ? $form_state['values']['bmm_menu'] : 'main-menu';
   $help_text = '<div id="better-mm-help-text">';
-  $help_text .= '<p>When you add new items to the menu selected above, you will need to re-save the configuration on this page, to get the item to display in the menu.</p>';
+  $help_text .= '<p>To add to, or remove items from the menu, go to the <a href="/admin/structure/menu/manage/';
+  $help_text .= $menu_name . '">Manage Menus</a> page for the chosen menu.</p>';
   $help_text .= '<strong>There are two blocks that will need to be configured for your Better Mega Menu.</strong>';
   $help_text .= '<ol><li>"Better Mega Menu Block" can be placed in any desirable region of your site, but typically, it is placed in the "Mega menu" region.</li>';
   $help_text .= '<li>"Better Mega Menu Mobile Block" should be placed in the "Footer" region.</li></ol>';
@@ -241,17 +243,22 @@ function better_mm_admin_settings($form, &$form_state) {
   $secondary_items = $mobile_settings['secondary_items_settings'];
   
   for ($i = 1; $i <= 5; $i++) {
+    if (!empty($secondary_items['secondary_item'][$i]['href'])) {
+      $collapsed = FALSE;
+    } else {
+      $collapsed = TRUE;
+    }
     $form['bmm_mobile_menu_settings']['secondary_items_settings']['secondary_item'][$i] = array(
       '#type' => 'fieldset',
       '#title' => t('Secondary Item ' . $i),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#collapsed' => $collapsed,
     );
     $form['bmm_mobile_menu_settings']['secondary_items_settings']['secondary_item'][$i]['title'] = array(
       '#type' => 'textfield',
       '#title' => t('Item Title'),
       '#description' => t('Leave blank if adding a class for an icon.'),
-      '#default_value' => '',
+      '#default_value' => $secondary_items['secondary_item'][$i]['title'],
     );
     $form['bmm_mobile_menu_settings']['secondary_items_settings']['secondary_item'][$i]['href'] = array(
       '#type' => 'textfield',
@@ -263,13 +270,13 @@ function better_mm_admin_settings($form, &$form_state) {
           '%add-node' => 'node/add', 
           '%drupal' => 'http://drupal.org',
         )),
-      '#default_value' => '',  
+      '#default_value' => $secondary_items['secondary_item'][$i]['href'],  
     );
     $form['bmm_mobile_menu_settings']['secondary_items_settings']['secondary_item'][$i]['class'] = array(
       '#type' => 'textfield',
       '#title' => t('Item Class'),
       '#description' => t('Enter any classes you want added to this menu item.'),
-      '#default_value' => '',
+      '#default_value' => $secondary_items['secondary_item'][$i]['class'],
     );
   }
   $form['bmm_mobile_menu_settings']['bmm_menu_mobile_footer'] = array(
@@ -326,7 +333,7 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
   $key = 0;
   $html = '<ul class="mega-menu mega-level-1 first hide-on-med-and-down">';
   $mobile_html = '<ul id="nav-mobile" class="side-nav">';
-  $mobile_html .= better_mm_mobile_secondary_html();
+  $mobile_html .= better_mm_mobile_secondary_html($mobile_settings);
   $mobile_html .= '<ul class="main-menu-navigation">';
   
   if (!empty($menu_items)) {
@@ -670,21 +677,21 @@ function better_mm_menu_item_tree($style, $children, $fid, $mobile = FALSE) {
 // = Build Mobile Secondary Menu HTML =
 // ====================================
 
-function better_mm_mobile_secondary_html() {
-  $secondary_items = variable_get('bmm_menu_mobile_secondary_fieldset', '');
+function better_mm_mobile_secondary_html($mobile_settings) {
+  $secondary_items = $mobile_settings['secondary_items_settings']['secondary_item'];
   $result = '';
   
   if (!empty($secondary_items)) {
     $result .= '<div class="side-nav-header">';
     $result .= '<ul class="mobile-secondary">';
     foreach ($secondary_items as $key => $menu_item) {
-      $link_title = $menu_item['bmm_title_' . $key];
-      $href = '/' . $menu_item['bmm_href_' . $key];
+      $link_title = $menu_item['title'];
+      $href = '/' . $menu_item['href'];
       if ($href == '/<front>') {
         $href = url('<front>');
       }
-      $class = $menu_item['bmm_class_' . $key];
-      if (!empty($menu_item['bmm_href_' . $key])) {
+      $class = $menu_item['class'];
+      if (!empty($menu_item['href'])) {
         $result .= '<li><div class="table"><div class="table-cell">';
         $result .= '<a href="' . $href . '" class="' . $class . '">' . $link_title . '</a>';
         $result .= '</div></div></li>';
