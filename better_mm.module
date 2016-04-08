@@ -164,15 +164,15 @@ function better_mm_admin_settings($form, &$form_state) {
       '#prefix' => '<div id="bmm-style-settings-' . $item_name . '" class="bmm-style-settings">',
       '#suffix' => '</div>',
     );
-    
     $nolink_default = $item_settings['style_settings']['nolink'];
     $saved_style = $item_settings['style'];
     $bmm_item_style = !empty($form_state['triggering_element']['#value']) ? 
       $form_state['triggering_element']['#value'] : $saved_style;
     
     if (!empty($form_state['triggering_element']['#value'])) {
-      if ($form_state['triggering_element']['#value'] == 'Upload') {
-        $bmm_item_style = $saved_style;
+      if ($form_state['triggering_element']['#value'] == 'Upload' || 
+          $form_state['triggering_element']['#value'] == 'Remove') {
+        $bmm_item_style = 'wide';
       }
     }
     if ($bmm_item_style == 'standard') {
