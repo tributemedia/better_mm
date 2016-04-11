@@ -492,7 +492,7 @@ function better_mm_get_block_content($menu_name) {
   $key = 0;
   $html = '<ul class="mega-menu mega-level-1 first hide-on-med-and-down">';
   $mobile_html = '<ul id="nav-mobile" class="side-nav">';
-  $mobile_html .= better_mm_mobile_secondary_html();
+  $mobile_html .= better_mm_mobile_secondary_html($mobile_settings);
   $mobile_html .= '<ul class="main-menu-navigation">';
   $menu_items = menu_navigation_links($menu_name);
   foreach ($menu_items as $menu_item) {
