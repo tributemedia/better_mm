@@ -476,7 +476,7 @@ function better_mm_delete_menu_item_submit(&$form, &$form_state) {
   $menu_name = $form_state['complete form']['#item']['menu_name'];
   $bmm = variable_get('bmm_menu', '');
   if ($menu_name == $bmm) {
-    $bmm_block_content = better_mm_get_block_content($bmm);
+    $bmm_block_content = better_mm_get_block_content($bmm);dsm($bmm_block_content);
     variable_set('bmm_block_content', $bmm_block_content['html']);
     variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
   }
@@ -496,13 +496,16 @@ function better_mm_get_block_content($menu_name) {
   $mobile_html = '<ul id="nav-mobile" class="side-nav">';
   $mobile_html .= better_mm_mobile_secondary_html($mobile_settings);
   $mobile_html .= '<ul class="main-menu-navigation">';
-  $menu_items = menu_navigation_links($menu_name);
+  $menu_items = menu_navigation_links($menu_name);dsm($menu_items);
   foreach ($menu_items as $menu_item) {
     $item_title = $menu_item['title'];
     $item_name = str_replace(' ', '-', strtolower($item_title));
-    $item_style = $menu_settings[$item_name]['style'];
-    $item_nolink = $menu_settings[$item_name]['style_settings']['nolink'];
-    $fid = $menu_settings[$item_name]['style_settings']['wide_setting'];
+    $item_style = !empty($menu_settings[$item_name]['style']) ? 
+      $menu_settings[$item_name]['style'] : 'standard';
+    $item_nolink = !empty($menu_settings[$item_name]['style_settings']['nolink']) ? 
+      $menu_settings[$item_name]['style_settings']['nolink'] : 0;
+    $fid = !empty($menu_settings[$item_name]['style_settings']['wide_setting']) ?
+      $menu_settings[$item_name]['style_settings']['wide_setting'] : 0;
     $children = better_mm_get_children($menu_item);
     $l1_class = better_mm_get_li_class($key, $menu_items);
     $child_class = better_mm_get_child_class($children, $item_style);
