@@ -52,9 +52,10 @@ function better_mm_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
-/* Code from https://www.drupal.org/node/1709914#comment-10753712 */
-/* Fixes PHP notice "Trying to get property of non-object in node_page_title()" */
-
+/**********************************************************************************/
+/* Code from https://www.drupal.org/node/1709914#comment-10753712                 */
+/* Fixes PHP notice "Trying to get property of non-object in node_page_title()"   */
+/**********************************************************************************/
 // ================================
 // = Implements hook_menu_alter() =
 // ================================
@@ -79,6 +80,7 @@ function better_mm_page_title($node) {
 }
 
 /* End code from above */
+/*******************************************************************************************/
 
 // ================================
 // = Construct admin settins form =
@@ -99,7 +101,7 @@ function better_mm_admin_settings($form, &$form_state) {
   $help_text .= '<li>Advanced: Works much like a Mega Menu item. You will provide the HTML for the drop down "block" of the item.</li></ol>';
   $help_text .= '</div>';
   $phone = '<div class="tel"><a href="tel:+12084890123">208.489.0123</a></div>';
-  $footer = '<div class="side-nav-footer center-align">&copy; ' . $site_name . '</div>';
+  $footer = '<div class="side-nav-footer center-align">&copy;' . date('Y') . ' ' . $site_name . '</div>';
   $settings_default = array(
     'style' => 'standard',
     'style_settings' => array(
@@ -116,8 +118,8 @@ function better_mm_admin_settings($form, &$form_state) {
   $mobile_settings = variable_get('bmm_mobile_menu_settings');
   $mobile_default = !empty($mobile_settings['below_mobile_nav']['value']) ? 
     $mobile_settings['below_mobile_nav']['value'] : $phone;
-  $footer_default = !empty($mobile_settings['mobile_footer']['value']) ? 
-    $mobile_settings['mobile_footer']['value'] : $footer;
+  $footer_default = !empty($mobile_settings['bmm_menu_mobile_footer']['value']) ? 
+    $mobile_settings['bmm_menu_mobile_footer']['value'] : $footer;
   $wide_access = FALSE;
   $adv_access = FALSE;
   
@@ -492,7 +494,7 @@ function better_mm_get_block_content($menu_name) {
   $key = 0;
   $html = '<ul class="mega-menu mega-level-1 first hide-on-med-and-down">';
   $mobile_html = '<ul id="nav-mobile" class="side-nav">';
-  $mobile_html .= better_mm_mobile_secondary_html();
+  $mobile_html .= better_mm_mobile_secondary_html($mobile_settings);
   $mobile_html .= '<ul class="main-menu-navigation">';
   $menu_items = menu_navigation_links($menu_name);
   foreach ($menu_items as $menu_item) {
