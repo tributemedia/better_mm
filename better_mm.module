@@ -50,6 +50,9 @@ function better_mm_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'menu_item_delete_form') { // deleting item
     $form['#submit'][] = 'better_mm_delete_menu_item_submit';
   }
+  if ($form_id == 'page_node_form') { // deleting item
+    $form['#submit'][] = 'better_mm_page_node_submit';
+  }
 }
 
 /**********************************************************************************/
@@ -476,10 +479,25 @@ function better_mm_delete_menu_item_submit(&$form, &$form_state) {
   $menu_name = $form_state['complete form']['#item']['menu_name'];
   $bmm = variable_get('bmm_menu', '');
   if ($menu_name == $bmm) {
-    $bmm_block_content = better_mm_get_block_content($bmm);dsm($bmm_block_content);
+    $bmm_block_content = better_mm_get_block_content($bmm);
     variable_set('bmm_block_content', $bmm_block_content['html']);
     variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
   }
+}
+
+// ========================================
+// = Page Node form custom submit handler =
+// ========================================
+
+function better_mm_page_node_submit(&$form, &$form_state) {
+  dsm($form_state['values']);
+  $enabled = $form_state['values']['menu']['enabled'];
+  if ($enabled) {
+    $parent = $form_state['values']['menu']['parent'];
+    $parent = explode(':', $parent);dsm($parent);
+    $menu_name = $parent[0];
+  }
+  
 }
 
 // =================================================================================
