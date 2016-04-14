@@ -476,7 +476,7 @@ function better_mm_delete_menu_item_submit(&$form, &$form_state) {
   $menu_name = $form_state['complete form']['#item']['menu_name'];
   $bmm = variable_get('bmm_menu', '');
   if ($menu_name == $bmm) {
-    $bmm_block_content = better_mm_get_block_content($bmm);dsm($bmm_block_content);
+    $bmm_block_content = better_mm_get_block_content($bmm);
     variable_set('bmm_block_content', $bmm_block_content['html']);
     variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
   }
