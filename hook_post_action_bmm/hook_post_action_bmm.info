@@ -1,0 +1,9 @@
+name = Hook Post Action BMM
+description = Allows menu items to be updated from node and entity edit forms. Without this module, all menu items must be added, removed, or edited through the menu module. Changes to nodes will not be reflected.
+core = 7.x
+package = Drupal
+
+dependencies[] = hook_post_action
+version = "7.x-1.0-beta1"
+core = "7.x"
+
