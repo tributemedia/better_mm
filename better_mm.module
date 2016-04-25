@@ -714,7 +714,7 @@ function better_mm_mobile_secondary_html($mobile_settings) {
   $secondary_items = $mobile_settings['secondary_items_settings']['secondary_item'];
   $result = '';
   
-  if (!empty($secondary_items)) {
+  if (!empty($secondary_items[1]['href'])) {
     $result .= '<div class="side-nav-header">';
     $result .= '<ul class="mobile-secondary">';
     foreach ($secondary_items as $key => $menu_item) {
