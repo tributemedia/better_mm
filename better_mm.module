@@ -426,7 +426,7 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       $key++;
     } // foreach menu_item
     $html .= '</ul>';
-    $mobile_html .= $mobile_footer;
+    $mobile_html .= '</ul>' . $mobile_footer;
     $mobile_html .= '</ul>';
     // Add mobile nav button.
     $html .= '<span class="nav-button valign-wrapper hide-on-large-only">';
