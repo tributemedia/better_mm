@@ -679,6 +679,8 @@ function better_mm_menu_item_tree($style, $children, $fid, $mobile = FALSE) {
       $class2_list = $l2_class . $child2_class;
       if ($child['link']['href'] == '<front>') {
         $url2 = url('<front>');
+      } elseif (strpos($child['link']['href'], 'http') === 0) {
+        $url2 = $child['link']['href'];
       } else {
         $url2 = '/' . drupal_get_path_alias($child['link']['href']);
       }
@@ -692,6 +694,8 @@ function better_mm_menu_item_tree($style, $children, $fid, $mobile = FALSE) {
           $l3_class = better_mm_get_li_class($key3, $children2);
           if ($child2['link']['href'] == '<front>') {
             $url3 = url('<front>');
+          } elseif (strpos($child2['link']['href'], 'http') === 0) {
+            $url3 = $child2['link']['href'];
           } else {
             $url3 = '/' . drupal_get_path_alias($child2['link']['href']);
           }
