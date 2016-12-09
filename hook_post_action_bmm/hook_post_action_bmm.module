@@ -183,7 +183,7 @@ function hook_post_action_bmm_get_block_content($menu_name) {
   $mobile_html = '<ul id="nav-mobile" class="side-nav">';
   $mobile_html .= better_mm_mobile_secondary_html($mobile_settings);
   $mobile_html .= '<ul class="main-menu-navigation">';
-  $menu_items = menu_navigation_links($menu_name);dsm($menu_items);
+  $menu_items = menu_navigation_links($menu_name);
   foreach ($menu_items as $menu_item) {
     $item_title = $menu_item['title'];
     $item_name = str_replace(' ', '-', strtolower($item_title));
