@@ -727,9 +727,12 @@ function better_mm_mobile_secondary_html($mobile_settings) {
     $result .= '<ul class="mobile-secondary">';
     foreach ($secondary_items as $key => $menu_item) {
       $link_title = $menu_item['title'];
-      $href = '/' . $menu_item['href'];
-      if ($href == '/<front>') {
-        $href = url('<front>');
+      if ($menu_item['href'] == '<front>') {
+        $url = url('<front>');
+      } elseif (strpos($menu_item['href'], 'http') === 0) {
+        $url = $menu_item['href'];
+      } else {
+        $url = '/' . drupal_get_path_alias($menu_item['href']);
       }
       $class = $menu_item['class'];
       if (!empty($menu_item['href'])) {
