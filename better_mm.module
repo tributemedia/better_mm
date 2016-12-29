@@ -380,7 +380,8 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       
       if ($menu_item['href'] == '<front>') {
         $url = url('<front>');
-      } elseif (strpos($menu_item['href'], 'http') === 0) {
+      } elseif ((strpos($menu_item['href'], 'http') === 0) || 
+                (strpos($menu_item['href'], 'https') === 0)) {
         $url = $menu_item['href'];
       } else {
         $url = '/' . drupal_get_path_alias($menu_item['href']);
