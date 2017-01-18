@@ -6,27 +6,21 @@ $(document).ready(function() {
     closeOnClick: true
   });
   
-    $(".plus-button").click(function(){
-        $(this).next("ul").slideToggle("slow");
-    });
-    $(".plus-button").click(function(){
-        $(this).toggleClass("opened");
-    });
+  $(".plus-button").click(function(){
+    var height = $(this).closest("ul").height();
+    $(this).closest("ul").css("min-height", height);
     
+    if ($(this).hasClass("opened")) {
+      $(this).next("ul").slideToggle("slow");
+      $(this).removeClass("opened");
+    } else {
+      $(".opened").next("ul").slideToggle("slow");
+      $(".plus-button").removeClass("opened");
+      $(this).addClass("opened");
+      $(this).next("ul").slideToggle("slow");
+    }
+  });
 
-         
-         
 });
-<<<<<<< Updated upstream
+
 })(jQuery);
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-})(jQuery);
-=======
-})(jQuery);
->>>>>>> origin/7.x-1.x-dev
-=======
-})(jQuery);
->>>>>>> origin/7.x-1.x-dev
->>>>>>> Stashed changes
