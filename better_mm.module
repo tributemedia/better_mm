@@ -738,7 +738,7 @@ function better_mm_mobile_secondary_html($mobile_settings) {
       $class = $menu_item['class'];
       if (!empty($menu_item['href'])) {
         $result .= '<li><div class="table"><div class="table-cell">';
-        $result .= '<a href="' . $href . '" class="' . $class . '">' . $link_title . '</a>';
+        $result .= '<a href="' . $url . '" class="' . $class . '">' . $link_title . '</a>';
         $result .= '</div></div></li>';
       }
     }
