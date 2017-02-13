@@ -599,7 +599,19 @@ function better_mm_get_children($menu_item) {
   );
   $children = menu_build_tree($parent['menu_name'], $parameters);
   
-  return $children;
+  if (!empty($children)) {
+    $active_children = array();
+    foreach ($children as $key => $child) {
+      if ($child['link']['hidden'] == 1) {
+        $child = NULL;
+      }
+      if ($child != NULL) {
+        $active_children[$key] = $child;
+      }
+    }
+    return $active_children;
+  }
+  return;
 }
 
 // ===================================
