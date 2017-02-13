@@ -17,16 +17,5 @@ $(document).ready(function() {
          
          
 });
-<<<<<<< Updated upstream
+
 })(jQuery);
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-})(jQuery);
-=======
-})(jQuery);
->>>>>>> origin/7.x-1.x-dev
-=======
-})(jQuery);
->>>>>>> origin/7.x-1.x-dev
->>>>>>> Stashed changes
