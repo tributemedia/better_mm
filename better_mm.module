@@ -369,6 +369,8 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
   if (!empty($menu_items)) {
     foreach ($menu_items as $menu_item) {
       $item_name = str_replace(' ', '-', strtolower($menu_item['title']));
+      $link_attributes = $menu_item['attributes'];
+      $item_attributes = $menu_item['item_attributes'];
       $style = $menu_settings[$item_name]['style'];
       $nolink = $menu_settings[$item_name]['style_settings']['nolink'];
       $fid = $menu_settings[$item_name]['style_settings']['wide_setting'];
@@ -376,8 +378,10 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       $children = better_mm_get_children($menu_item);
       $l1_class = better_mm_get_li_class($key, $menu_items);
       $child_class = better_mm_get_child_class($children, $style);
-      $class_list = $l1_class . $child_class;
-      
+      $item_classes = $item_attributes['class'];
+      $class_list = $item_classes . $l1_class . $child_class;
+      $item_id = $item_attributes['id'];
+            
       if ($menu_item['href'] == '<front>') {
         $url = url('<front>');
       } elseif ((strpos($menu_item['href'], 'http') === 0) || 
@@ -401,15 +405,27 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
         file_usage_add($file, 'better_mm', 'menu-item', $mlid);
       }
       
-      $html .= '<li class="' . $class_list . '"><a';
-      $mobile_html .= '<li class="' . $class_list . '"><a';
-      if ($nolink) {
-        $html .= '>' . $menu_item['title'] . '</a>';
-        $mobile_html .= '>' . $menu_item['title'] . '</a>';
+      $html .= '<li ';
+      if ($item_id) {
+        $html .= 'id="' . $item_id . '" ';
       }
+      $html .= 'class="' . $class_list . '">';
+      
+      $mobile_html .= '<li ';
+      if ($item_id) {
+        $mobile_html .= 'id="' . $item_id . '" ';
+      }
+      $mobile_html .= 'class="' . $class_list . '">';
+      
+      if ($nolink) {
+        $link_attributes['class'][] = 'no-link';
+        $html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
+        $mobile_html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
+      }
+      
       if (!$nolink) {
-        $html .= ' href="' . $url . '">' . $menu_item['title'] . '</a>';
-        $mobile_html .= ' href="' . $url . '">' . $menu_item['title'] . '</a>';
+        $html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
+        $mobile_html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
       }
       
       if ($style == 'advanced') {
@@ -503,6 +519,8 @@ function better_mm_get_block_content($menu_name) {
   foreach ($menu_items as $menu_item) {
     $item_title = $menu_item['title'];
     $item_name = str_replace(' ', '-', strtolower($item_title));
+    $link_attributes = $menu_item['attributes'];
+    $item_attributes = $menu_item['item_attributes'];
     $item_style = !empty($menu_settings[$item_name]['style']) ? 
       $menu_settings[$item_name]['style'] : 'standard';
     $item_nolink = !empty($menu_settings[$item_name]['style_settings']['nolink']) ? 
@@ -512,7 +530,10 @@ function better_mm_get_block_content($menu_name) {
     $children = better_mm_get_children($menu_item);
     $l1_class = better_mm_get_li_class($key, $menu_items);
     $child_class = better_mm_get_child_class($children, $item_style);
-    $class_list = $l1_class . $child_class;
+    $item_classes = $item_attributes['class'];
+    $class_list = $item_classes . $l1_class . $child_class;
+    $item_id = $item_attributes['id'];
+    
     if ($menu_item['href'] == '<front>') {
       $url = url('<front>');
     } elseif (strpos($menu_item['href'], 'http') === 0) {
@@ -520,16 +541,30 @@ function better_mm_get_block_content($menu_name) {
     } else {
       $url = '/' . drupal_get_path_alias($menu_item['href']);
     }
-    $html .= '<li class="' . $class_list . '"><a';
-    $mobile_html .= '<li class="' . $class_list . '"><a';
+    
+    $html .= '<li ';
+    if ($item_id) {
+      $html .= 'id="' . $item_id . '" ';
+    }
+    $html .= 'class="' . $class_list . '">';
+    
+    $mobile_html .= '<li ';
+    if ($item_id) {
+      $mobile_html .= 'id="' . $item_id . '" ';
+    }
+    $mobile_html .= 'class="' . $class_list . '">';
+    
     if ($item_nolink) {
-      $html .= '>' . $item_title . '</a>';
-      $mobile_html .= '>' . $item_title . '</a>';
+      $link_attributes['class'][] = 'no-link';
+      $html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
+      $mobile_html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
     }
+    
     if (!$item_nolink) {
-      $html .= ' href="' . $url . '">' . $item_title . '</a>';
-      $mobile_html .= ' href="' . $url . '">' . $item_title . '</a>';
+      $html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
+      $mobile_html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
     }
+    
     if ($item_style == 'advanced') {
       if (!empty($menu_settings[$item_name]['style_settings']['advanced_setting']['value'])) {
         $html .= '<ul class="mega-level-2 ' . $item_style . '">';
@@ -622,17 +657,17 @@ function better_mm_get_li_class($key, $array) {
   $last = count($array) - 1;
   
   if ($key == 0) {
-    return 'first';
+    return ' first';
   }
   
   if ($key == $last) {
-    return 'last';
+    return ' last';
   }
   
   if ($key & 1) {
-    return 'even';
+    return ' even';
   } else {
-    return 'odd';
+    return ' odd';
   }
 }
 

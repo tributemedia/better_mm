@@ -15,3 +15,8 @@
 .bmm-style-settings .form-type-item {
 	padding: 0;
 }
+
+.no-link {
+  pointer-events: none;
+  cursor: default;
+}
