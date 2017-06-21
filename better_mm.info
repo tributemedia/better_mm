@@ -6,8 +6,5 @@ version 7.x-1.1-beta
 files[] = better_mm.module
 stylesheets[all][] = css/better_mm.css
 configure = admin/structure/better_mm
-<<<<<<< Updated upstream
 scripts[] = js/tm.mega.js
-=======
-scripts[] = js/tm.mega.js
->>>>>>> Stashed changes
+
