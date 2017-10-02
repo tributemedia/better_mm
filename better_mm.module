@@ -369,8 +369,10 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
   if (!empty($menu_items)) {
     foreach ($menu_items as $menu_item) {
       $item_name = str_replace(' ', '-', strtolower($menu_item['title']));
-      $link_attributes = $menu_item['attributes'];
-      $item_attributes = $menu_item['item_attributes'];
+      $link_attributes = isset($menu_item['attributes']) ? 
+        $menu_item['attributes'] : array();
+      $item_attributes = isset($menu_item['item_attributes']) ? 
+        $menu_item['item_attributes'] : array();
       $style = $menu_settings[$item_name]['style'];
       $nolink = $menu_settings[$item_name]['style_settings']['nolink'];
       $fid = $menu_settings[$item_name]['style_settings']['wide_setting'];
