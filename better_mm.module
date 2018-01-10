@@ -386,7 +386,7 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
             
       if ($menu_item['href'] == '<front>') {
         $url = url('<front>');
-      } elseif (preg_match('/^http/', $menu_item['href']) === 0) {
+      } elseif (preg_match('/^http/', $menu_item['href']) === 1) {
         $url = $menu_item['href'];
       } else {
         $url = '/' . drupal_get_path_alias($menu_item['href']);
@@ -537,7 +537,7 @@ function better_mm_get_block_content($menu_name) {
     
     if ($menu_item['href'] == '<front>') {
       $url = url('<front>');
-    } elseif (preg_match('/^http/', $menu_item['href']) === 0) {
+    } elseif (preg_match('/^http/', $menu_item['href']) === 1) {
       $url = $menu_item['href'];
     } else {
       $url = '/' . drupal_get_path_alias($menu_item['href']);
