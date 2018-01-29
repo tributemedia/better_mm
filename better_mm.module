@@ -380,8 +380,10 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       $children = better_mm_get_children($menu_item);
       $l1_class = better_mm_get_li_class($key, $menu_items);
       $child_class = better_mm_get_child_class($children, $style);
+      $child_class_mob = better_mm_get_child_class($children, $style, TRUE);
       $item_classes = $item_attributes['class'];
       $class_list = $item_classes . $l1_class . $child_class;
+      $class_list_mob = $item_classes . $l1_class . $child_class_mob;
       $item_id = $item_attributes['id'];
             
       if ($menu_item['href'] == '<front>') {
@@ -416,7 +418,7 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
       if ($item_id) {
         $mobile_html .= 'id="' . $item_id . '" ';
       }
-      $mobile_html .= 'class="' . $class_list . '">';
+      $mobile_html .= 'class="' . $class_list_mob . '">';
       
       if ($nolink) {
         $link_attributes['class'][] = 'no-link';
@@ -531,8 +533,10 @@ function better_mm_get_block_content($menu_name) {
     $children = better_mm_get_children($menu_item);
     $l1_class = better_mm_get_li_class($key, $menu_items);
     $child_class = better_mm_get_child_class($children, $item_style);
+    $child_class_mob = better_mm_get_child_class($children, $item_style, TRUE);
     $item_classes = $item_attributes['class'];
     $class_list = $item_classes . $l1_class . $child_class;
+    $class_list_mob = $item_classes . $l1_class . $child_class_mob;
     $item_id = $item_attributes['id'];
     
     if ($menu_item['href'] == '<front>') {
@@ -553,7 +557,7 @@ function better_mm_get_block_content($menu_name) {
     if ($item_id) {
       $mobile_html .= 'id="' . $item_id . '" ';
     }
-    $mobile_html .= 'class="' . $class_list . '">';
+    $mobile_html .= 'class="' . $class_list_mob . '">';
     
     if ($item_nolink) {
       $link_attributes['class'][] = 'no-link';
@@ -676,8 +680,9 @@ function better_mm_get_li_class($key, $array) {
 // = Get child class for <li> item =
 // =================================
 
-function better_mm_get_child_class($children, $style = 'standard') {
-  if ($style == 'advanced') {
+function better_mm_get_child_class($children, $style = 'standard', $mobile = FALSE) {
+  
+  if ($style == 'advanced' && $mobile === FALSE) {
     return ' unset-child';
   }
   
@@ -724,7 +729,7 @@ function better_mm_menu_item_tree($style, $children, $fid, $mobile = FALSE) {
       $title2 = $child['link']['link_title'];
       $children2 = better_mm_get_children($child['link']);
       $l2_class = better_mm_get_li_class($key2, $children);
-      $child2_class = better_mm_get_child_class($children2);
+      $child2_class = better_mm_get_child_class($children2, $mobile);
       $class2_list = $l2_class . $child2_class;
       if ($child['link']['href'] == '<front>') {
         $url2 = url('<front>');
