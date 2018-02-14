@@ -196,14 +196,18 @@ function hook_post_action_bmm_get_block_content($menu_name) {
     $children = better_mm_get_children($menu_item);
     $l1_class = better_mm_get_li_class($key, $menu_items);
     $child_class = better_mm_get_child_class($children, $item_style);
+    $child_class_mob = better_mm_get_child_class($children, $item_style, TRUE);
     $class_list = $l1_class . $child_class;
+    $class_list_mob = $item_classes . $l1_class . $child_class_mob;
     if ($menu_item['href'] == '<front>') {
       $url = url('<front>');
+    } elseif (preg_match('/^http/', $menu_item['href']) === 1) {
+      $url = $menu_item['href'];
     } else {
       $url = '/' . drupal_get_path_alias($menu_item['href']);
     }
     $html .= '<li class="' . $class_list . '"><a';
-    $mobile_html .= '<li class="' . $class_list . '"><a';
+    $mobile_html .= '<li class="' . $class_list_mob . '"><a';
     if ($item_nolink) {
       $html .= '>' . $item_title . '</a>';
       $mobile_html .= '>' . $item_title . '</a>';
