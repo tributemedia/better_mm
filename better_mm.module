@@ -321,7 +321,7 @@ function better_mm_admin_settings($form, &$form_state) {
     '#value' => t('Save Configuration'),
     '#submit' => array('better_mm_admin_settings_submit'),
   );
-  
+  //dsm(menu_tree_all_data(variable_get('bmm_menu')));
   return $form;
 }
 
@@ -425,34 +425,56 @@ function better_mm_get_options($item) {
 // ==========================
 
 function better_mm_get_children($menu_item) {
-  if ($menu_item['href'] == '<front>') {
-    $path = url('<front>');
-  } else {
-    $path = $menu_item['href'];
-  }
-  $parent = menu_link_get_preferred($path);
-  $parameters = array(
-  	'active_trail' => array($parent['plid']),
-  	'only_active_trail' => FALSE,
-  	'min_depth' => $parent['depth']+1,
-  	'max_depth' => $parent['depth']+1,
-  	'conditions' => array('plid' => $parent['mlid']),
-  );
-  $children = menu_build_tree($parent['menu_name'], $parameters);
+  $parameters = array();
+  $menu_name = variable_get('bmm_menu');
   
-  if (!empty($children)) {
-    $active_children = array();
-    foreach ($children as $key => $child) {
-      if ($child['link']['hidden'] == 1) {
-        $child = NULL;
-      }
-      if ($child != NULL) {
-        $active_children[$key] = $child;
-      }
+  // If the menu item is the front page
+  if ($menu_item['href'] == '<front>') {
+	
+	// menu_link_get_preferred method will not retrieve a valid node for the
+	// home page path. For some reason it returns a non-existant link from
+	// the navigation menu. Therefore, for the home page, we must grab the
+	// menu data manually, parse through it to find the home page, grab the
+	// info needed for parameters when building the menu tree.
+    $menu_tree = menu_tree_all_data(variable_get('bmm_menu'));
+
+    foreach($menu_tree as $menu_tree_item) {
+	  if($menu_tree_item['link']['link_path'] == '<front>') {
+		return $menu_tree_item['below'];
+	  }
     }
-    return $active_children;
   }
-  return;
+  // For all other menu items
+  else {
+    $path = $menu_item['href'];
+	$parent = menu_link_get_preferred($path);
+	$menu_name = $parent['menu_name'];
+	
+	$parameters = array(
+  	  'active_trail' => array($parent['plid']),
+  	  'only_active_trail' => FALSE,
+  	  'min_depth' => $parent['depth']+1,
+  	  'max_depth' => $parent['depth']+1,
+  	  'conditions' => array('plid' => $parent['mlid']),
+    );
+	
+	$children = menu_build_tree($menu_name, $parameters);
+
+    if (!empty($children)) {
+      $active_children = array();
+      foreach ($children as $key => $child) {
+        if ($child['link']['hidden'] == 1) {
+          $child = NULL;
+        }
+        if ($child != NULL) {
+          $active_children[$key] = $child;
+        }
+      }
+      return $active_children;
+    }
+  }
+  
+  return array();
 }
 
 // ===================================
