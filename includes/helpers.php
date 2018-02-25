@@ -129,3 +129,53 @@ function bmm_gen_block_html($menu_name = NULL) {
   
   return array('html' => $html, 'mobile' => $mobile_html);
 }
+
+/*
+ * Recursively drills down into the children of a parent menu item (the 
+ * haystack) to find a menu item, and its children items (the needle).
+ *
+ * @param $menu_item_needle
+ *   The menu item whose children need to be found, and returned.
+ *
+ * @param $menu_item_haystack
+ *   The parent menu item to search through.
+ *
+ * @return array
+ *   A multi-dimensional array consisting of the passed in menu item's 
+ *   children.
+ * 
+ * @return NULL
+ *   If no menu item is found matching the menu item passed in, NULL is
+ *   returned.
+ */
+function find_menu_item_children($menu_item_needle, $menu_item_haystack) {
+  // This is the base case of the recursive function. If the passed in
+  // menu item matches what we're looking for (based on the link href and
+  // title passed in) then return this menu item's children.
+  if($menu_item_needle['link']['link_path'] == 
+  $menu_item_haystack['link']['link_path'] &&
+  $menu_item_needle['link']['title'] == 
+  $menu_item_haystack['link']['title']) {
+	return $menu_item_haystack['below'];
+  }
+  // Otherwise, drill down into this current menu item's children (if there
+  // are any). If there are children, recursively call this function to 
+  // explore the child menu item's children for what we're looking for.
+  // Otherwise, return NULL.
+  else {
+	if(count($menu_item_haystack['below']) > 0) {
+	  foreach($menu_item_haystack['below'] as $menu_child) {
+		$val = find_menu_item_children($menu_item_needle, $menu_child);
+		
+		if(isset($val)) {
+		  return $val;
+		}
+	  }
+	  
+	  return NULL;
+	}
+	else {
+	  return NULL;
+	}
+  }
+}
