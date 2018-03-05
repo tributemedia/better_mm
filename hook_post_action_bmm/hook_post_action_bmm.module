@@ -15,10 +15,19 @@ require_once(drupal_get_path('module', 'better_mm') . '/includes/helpers.php');
 function hook_post_action_bmm_node_postinsert($node) {
   $menu = $node->menu;
   $bmm = variable_get('bmm_menu', '');
+  
   if ($menu['enabled']) {
     $parent = explode(':', $menu['parent']);
     $menu_name = $parent[0];
+	
+	// If the menu we're editing is the BMM and if the current node being
+	// inserted is at the root level of the menu, add it to the BMM form
+	// settings variable
     if ($menu_name == $bmm) {
+      if(strpos($menu['parent'], $parent[0] . ':0') !== FALSE) {
+        saveToBMMItemSettings($node->menu['link_title'], $node->menu['mlid']);
+      }
+	  
       $bmm_block_content = bmm_gen_block_html($bmm);
       variable_set('bmm_block_content', $bmm_block_content['html']);
       variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
@@ -43,7 +52,15 @@ function hook_post_action_bmm_node_postupdate($node) {
   if ($menu['enabled']) {
     $parent = explode(':', $menu['parent']);
     $menu_name = $parent[0];
+    
+	// If the menu being edited is the BMM and the currently updated node
+	// is in the root level of the menu, add a setting for the BMM form
+	// settings variable
     if ($menu_name == $bmm) {
+	  if(strpos($menu['parent'], $parent[0] . ':0') !== FALSE) {
+        saveToBMMItemSettings($node->menu['link_title'], $node->menu['mlid']);
+      }
+	  
       $bmm_block_content = bmm_gen_block_html($bmm);
       variable_set('bmm_block_content', $bmm_block_content['html']);
       variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
@@ -68,6 +85,7 @@ function hook_post_action_bmm_node_postupdate($node) {
  */
 function hook_post_action_bmm_node_postdelete($node) {
   $bmm = variable_get('bmm_menu', '');
+  
   $bmm_block_content = bmm_gen_block_html($bmm);
   variable_set('bmm_block_content', $bmm_block_content['html']);
   variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);

@@ -19,7 +19,7 @@ function bmm_gen_block_html($menu_name = NULL) {
   $menu_items = '';
   
   if(isset($menu_name)) {
-    $menu_items = menu_navigation_links($menu_name);
+    $menu_items = menu_tree_all_data($menu_name, NULL, 5);;
   }
   else {
 	$menu_items = variable_get('bmm_menu_items');
@@ -36,15 +36,31 @@ function bmm_gen_block_html($menu_name = NULL) {
   
   if (!empty($menu_items)) {
     foreach ($menu_items as $menu_item) {
-      $item_name = str_replace(' ', '-', strtolower($menu_item['title']));
-      $link_attributes = isset($menu_item['attributes']) ? 
-        $menu_item['attributes'] : array();
-      $item_attributes = isset($menu_item['item_attributes']) ? 
-        $menu_item['item_attributes'] : array();
-      $style = $menu_settings[$item_name]['style'];
-      $nolink = $menu_settings[$item_name]['style_settings']['nolink'];
-      $fid = $menu_settings[$item_name]['style_settings']['wide_setting'];
-      $adv_content = $menu_settings[$item_name]['style_settings']['advanced_setting']['value'];
+      $item_name = str_replace(' ', '-', strtolower($menu_item['link']['link_title']));
+      $link_attributes = isset($menu_item['link']['options']['attributes']) ? 
+        $menu_item['link']['options']['attributes'] : array();
+      $item_attributes = isset($menu_item['link']['options']['item_attributes']) ? 
+        $menu_item['link']['options']['item_attributes'] : array();
+      
+	  // Default variable declarations
+	  $style = 'standard';
+	  $nolink = 0;
+	  $fid = 0;
+	  $adv_content = '';
+	  
+	  if(isset($menu_settings[$menu_item['link']['mlid']])) {
+		$mlid = $menu_item['link']['mlid'];
+	    $style = $menu_settings[$mlid]['style'];
+        $nolink = $menu_settings[$mlid]['style_settings']['nolink'];
+        $fid = $menu_settings[$mlid]['style_settings']['wide_setting'];
+        $adv_content = $menu_settings[$mlid]['style_settings']['advanced_setting']['value']; 
+	  }
+	  else if(isset($menu_settings[$item_name])){
+		$style = $menu_settings[$item_name]['style'];
+        $nolink = $menu_settings[$item_name]['style_settings']['nolink'];
+        $fid = $menu_settings[$item_name]['style_settings']['wide_setting'];
+        $adv_content = $menu_settings[$item_name]['style_settings']['advanced_setting']['value'];  
+	  }
       $children = better_mm_get_children($menu_item);
       $l1_class = better_mm_get_li_class($key, $menu_items);
       $child_class = better_mm_get_child_class($children, $style);
@@ -54,17 +70,17 @@ function bmm_gen_block_html($menu_name = NULL) {
       $class_list_mob = $item_classes . $l1_class . $child_class_mob;
       $item_id = $item_attributes['id'];
             
-      if ($menu_item['href'] == '<front>') {
+      if ($menu_item['link']['link_path'] == '<front>') {
         $url = url('<front>');
-      } elseif (preg_match('/^http/', $menu_item['href']) === 1) {
-        $url = $menu_item['href'];
+      } elseif (preg_match('/^http/', $menu_item['link']['link_path']) === 1) {
+        $url = $menu_item['link']['link_path'];
       } else {
-        $url = '/' . drupal_get_path_alias($menu_item['href']);
+        $url = '/' . drupal_get_path_alias($menu_item['link']['link_path']);
       }
       
       // If a file has been uploaded, set file status to permanent.
       if (is_numeric($fid) && $fid != 0) {
-        $item = menu_get_item($menu_item['href']);
+        $item = menu_get_item($menu_item['link']['link_path']);
         $mlid = db_select('menu_links' , 'ml')
           ->condition('ml.link_path' , $item['href'])
           ->fields('ml' , array('mlid'))
@@ -90,13 +106,13 @@ function bmm_gen_block_html($menu_name = NULL) {
       
       if ($nolink) {
         $link_attributes['class'][] = 'no-link';
-        $html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
-        $mobile_html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
+        $html .= l($menu_item['link']['link_title'], $url, array('attributes' => $link_attributes));
+        $mobile_html .= l($menu_item['link']['link_title'], $url, array('attributes' => $link_attributes));
       }
       
       if (!$nolink) {
-        $html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
-        $mobile_html .= l($menu_item['title'], $url, array('attributes' => $link_attributes));
+        $html .= l($menu_item['link']['link_title'], $url, array('attributes' => $link_attributes));
+        $mobile_html .= l($menu_item['link']['link_title'], $url, array('attributes' => $link_attributes));
       }
       
       if ($style == 'advanced') {
@@ -178,4 +194,54 @@ function find_menu_item_children($menu_item_needle, $menu_item_haystack) {
 	  return NULL;
 	}
   }
+}
+
+/*
+ * Function that saves or deletes a menu item from the BMM form settings
+ * database variable.
+ *
+ * @param $itemName
+ *   The name of the menu item to be added or deleted (also called title).
+ *
+ * @param $mlid
+ *   The menu link id (mlid) of the menu link to be added or deleted.
+ *
+ * @param $delete
+ *   Optional variable that indicates where to add or delete the menu item.
+ *   The default option is FALSE, which means the function will add the menu
+ *   item. Set to TRUE if you wish for the item specified to be deleted.
+ */
+function saveToBMMItemSettings($itemName, $mlid, $delete = FALSE) {
+  $currentSettings = variable_get('bmm_menu_items_settings', '');
+  $itemName = strtolower($itemName);
+  
+  // If delete is false, add the menu item to the form settings with default
+  // settings.
+  if(!$delete) {
+	if(!isset($currentSettings[$mlid])) {
+      $currentSettings[$mlid] = array('name' => $itemName, 
+        'style' => 'standard',
+	    'style_settings' => array(
+	      'nolink' => 0,
+	      'wide_setting' => 0,
+	      'advanced_setting' => array(
+	        'value' => '',
+	  	  'format' => 'full_html',
+	      ),
+	    ),
+      );
+	}
+  }
+  // Otherwise, remove the menu item based on the mlid, or title.
+  else {
+	if(isset($currentSettings[$mlid])) {
+	  unset($currentSettings[$mlid]);
+	}
+	else {
+	  unset($currentSettings[$itemName]);
+	}
+  }
+  
+  // Set the BMM menu items settings variable to the new form settings
+  variable_set('bmm_menu_items_settings', $currentSettings);
 }

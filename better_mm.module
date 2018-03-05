@@ -154,7 +154,7 @@ function better_mm_admin_settings($form, &$form_state) {
   );
   
   $menu_selection = !empty($form_state['values']['bmm_menu']) ? $form_state['values']['bmm_menu'] : 'main-menu';
-  $menu_items = menu_navigation_links($menu_selection);
+  $menu_items = menu_tree_all_data($menu_selection, NULL, 5);
   
   $form['bmm_menu_items'] = array(
     '#type' => 'value',
@@ -165,9 +165,26 @@ function better_mm_admin_settings($form, &$form_state) {
   
   foreach ($menu_items as $menu_item) {
     // menu item variables
-    $item_title = $menu_item['title'];
+    $item_title = $menu_item['link']['link_title'];
     $item_name = str_replace(' ', '-', strtolower($item_title));
-    $item_settings = !empty($menu_settings) ? $menu_settings[$item_name] : $settings_default;
+    $item_settings = '';
+	
+
+	if(!empty($menu_settings)) {
+	  if(isset($menu_settings[$menu_item['link']['mlid']])) {
+	    $item_settings = $menu_settings[$menu_item['link']['mlid']];
+	  }
+	  else if(isset($menu_settings[$item_name])) {
+		$item_settings = $menu_settings[$item_name];
+	  }
+	  else {
+		$item_settings = $settings_default;
+	  }
+	}
+	else {
+	  $item_settings = $settings_default;
+	}
+	
     $adv_default = $item_settings['style_settings']['advanced_setting']['value'];
         
     // Settings fields for each menu item.
@@ -364,9 +381,17 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
 // ===========================
 
 function better_mm_add_link_submit(&$form, &$form_state) {
-  $menu_name = $form_state['values']['menu_name'];
   $bmm = variable_get('bmm_menu', '');
+  $menu_name = $form_state['values']['menu_name'];
+  
+  // If the menu being edited is the BMM and the item being added is on the 
+  // root level, add the item to the BMM form settings.
   if ($menu_name == $bmm) {
+	if(strpos($form_state['values']['parent'], $menu_name . ':0') !== FALSE) {
+      saveToBMMItemSettings($form_state['values']['link_title'], 
+	    $form_state['values']['mlid']);
+    }
+	
     $bmm_block_content = bmm_gen_block_html($menu_name);
     variable_set('bmm_block_content', $bmm_block_content['html']);
     variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
@@ -394,10 +419,40 @@ function better_mm_menu_overview_submit(&$form, &$form_state) {
 function better_mm_delete_menu_item_submit(&$form, &$form_state) {
   $menu_name = $form_state['complete form']['#item']['menu_name'];
   $bmm = variable_get('bmm_menu', '');
+  
+  // If the menu being edited is the BMM and this menu item is a root 
+  // level item, delete it from the settings.
   if ($menu_name == $bmm) {
+	if($form_state['complete form']['#item']['plid'] == '0') {
+      saveToBMMItemSettings(
+	    $form_state['complete form']['#item']['link_title'], 
+	    $form_state['complete form']['#item']['mlid'], TRUE);
+    }
+	
     $bmm_block_content = bmm_gen_block_html($menu_name);
     variable_set('bmm_block_content', $bmm_block_content['html']);
     variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
+  }
+}
+
+// ========================================================
+// Implements hook_node_delete
+// Handles removing a node from BMM settings if it's in the
+// settings.
+// ========================================================
+
+function better_mm_node_delete($node) {
+  $bmm = variable_get('bmm_menu', '');
+  $nodePath = 'node/' . $node->nid;
+  $nodeMenuItem = menu_link_get_preferred($nodePath, $bmm);
+  
+  if(isset($nodeMenuItem)) {
+	if($bmm == $nodeMenuItem['menu_name'] && $nodeMenuItem['plid'] == 0) {
+	  $item_name = str_replace(' ', '-', 
+	    strtolower($nodeMenuItem['link_title']));
+	  saveToBMMItemSettings($item_name, $nodeMenuItem['mlid'], 
+	    TRUE);
+	}
   }
 }
 
