@@ -1,5 +1,5 @@
 <?php
-require_once(drupal_get_path('module', 'better_mm') . '/includes/helpers.php');
+require_once(drupal_get_path('module', 'better_mm') . '/includes/helpers.inc');
 
 /**
  * Gets called after a node has been inserted to database.
