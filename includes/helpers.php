@@ -168,10 +168,8 @@ function find_menu_item_children($menu_item_needle, $menu_item_haystack) {
   // This is the base case of the recursive function. If the passed in
   // menu item matches what we're looking for (based on the link href and
   // title passed in) then return this menu item's children.
-  if($menu_item_needle['link']['link_path'] == 
-  $menu_item_haystack['link']['link_path'] &&
-  $menu_item_needle['link']['title'] == 
-  $menu_item_haystack['link']['title']) {
+  if($menu_item_needle['link']['mlid'] == 
+  $menu_item_haystack['link']['mlid']) {
 	return $menu_item_haystack['below'];
   }
   // Otherwise, drill down into this current menu item's children (if there

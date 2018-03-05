@@ -338,7 +338,7 @@ function better_mm_admin_settings($form, &$form_state) {
     '#value' => t('Save Configuration'),
     '#submit' => array('better_mm_admin_settings_submit'),
   );
-
+  
   return $form;
 }
 
@@ -500,6 +500,7 @@ function better_mm_get_children($menu_item) {
 	$find_menu_item['link'] = array();
 	$find_menu_item['below'] = array();
 	$find_menu_item['link']['link_path'] = $menu_item['href'];
+	$find_menu_item['link']['mlid'] = $menu_item['mlid'];
 	$find_menu_item['link']['title'] = $menu_item['title'];
   }
   
@@ -507,7 +508,6 @@ function better_mm_get_children($menu_item) {
   // locate the link that we're looking for. If it's found, return the link's
   // children.
   foreach($menu_tree as $menu_tree_item) {
-	// Recursive helper function that digs down into a link's children
 	$menu_item_children = find_menu_item_children($find_menu_item, 
 	  $menu_tree_item);
 	  
