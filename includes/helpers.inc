@@ -36,6 +36,11 @@ function bmm_gen_block_html($menu_name = NULL) {
   
   if (!empty($menu_items)) {
     foreach ($menu_items as $menu_item) {
+	  if(isset($menu_item['link']['hidden'])) {
+	    if($menu_item['link']['hidden'] == '1') {
+		  continue;
+		}
+	  }
       $item_name = str_replace(' ', '-', strtolower($menu_item['link']['link_title']));
       $link_attributes = isset($menu_item['link']['options']['attributes']) ? 
         $menu_item['link']['options']['attributes'] : array();

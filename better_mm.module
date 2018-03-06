@@ -155,11 +155,7 @@ function better_mm_admin_settings($form, &$form_state) {
   
   $menu_selection = !empty($form_state['values']['bmm_menu']) ? $form_state['values']['bmm_menu'] : 'main-menu';
   $menu_items = menu_tree_all_data($menu_selection, NULL, 5);
-  
-  $form['bmm_menu_items'] = array(
-    '#type' => 'value',
-    '#value' => $menu_items,
-  );
+  $bmm_menu_items = array();
   
   $menu_settings = variable_get('bmm_menu_items_settings', $menu_settings_default);
   
@@ -177,6 +173,9 @@ function better_mm_admin_settings($form, &$form_state) {
 	  else if(isset($menu_settings[$item_name])) {
 		$item_settings = $menu_settings[$item_name];
 	  }
+	  else if($menu_item['link']['hidden'] == '1') {
+		continue;
+	  }
 	  else {
 		$item_settings = $settings_default;
 	  }
@@ -184,7 +183,7 @@ function better_mm_admin_settings($form, &$form_state) {
 	else {
 	  $item_settings = $settings_default;
 	}
-	
+	$bmm_menu_items[] = $menu_item;
     $adv_default = $item_settings['style_settings']['advanced_setting']['value'];
         
     // Settings fields for each menu item.
@@ -269,6 +268,12 @@ function better_mm_admin_settings($form, &$form_state) {
       '#rows' => 10,
     );
   }
+  
+  $form['bmm_menu_items'] = array(
+    '#type' => 'value',
+    '#value' => $bmm_menu_items,
+  );
+  
   $form['bmm_mobile_menu_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Mobile Menu Settings'),
