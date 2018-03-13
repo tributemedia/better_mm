@@ -1,101 +1,5 @@
 <?php
-/**
- * Gets called after an entity has been inserted/updated/deleted to database.
- *
- * @param $entity
- *   An entity object
- * @param string $entity
- *   An string containing entity type name
- * @param string $op
- *   An string containing the operating that's taking place (insert/update/delete)
- *
- * @see hook_entity_postsave()
- * @see hook_entity_postinsert()
- * @see hook_entity_postupdate()
- * @see hook_entity_postdelete()
- */
-// function hook_post_action_bmm_entity_postsave($entity, $entity_type, $op) {
-//   list($id) = entity_extract_ids($entity_type, $entity);
-//   watchdog('hook_post_action_bmm', "The {$op}d entity {$entity_type} id is {$id} from " . __FUNCTION__);
-// }
-
-/**
- * Gets called after an entity has been inserted to database.
- *
- * @param $entity
- *   An entity object
- * @param string $entity
- *   An string containing entity type name
- *
- * @see hook_entity_postsave()
- * @see hook_entity_postinsert()
- * @see hook_entity_postupdate()
- * @see hook_entity_postdelete()
- */
-// function hook_post_action_bmm_entity_postinsert($entity, $entity_type) {
-//   list($id) = entity_extract_ids($entity_type, $entity);
-//   watchdog('hook_post_action_bmm', "The inserted entity {$entity_type} id is {$id} from " . __FUNCTION__);
-// }
-
-/**
- * Gets called after an entity has been updated in database.
- *
- * @param $entity
- *   An entity object
- * @param string $entity
- *   An string containing entity type name
- *
- * @see hook_entity_postsave()
- * @see hook_entity_postupdate()
- * @see hook_entity_postinsert()
- * @see hook_entity_postdelete()
- */
-// function hook_post_action_bmm_entity_postupdate($entity, $entity_type) {
-//   list($id) = entity_extract_ids($entity_type, $entity);
-//   watchdog('hook_post_action_bmm', "The updated entity {$entity_type} id is {$id} from " . __FUNCTION__);
-// }
-
-/**
- * Gets called after an entity has been deleted from database.
- *
- * @param $entity
- *   An entity object
- * @param string $entity
- *   An string containing entity type name
- *
- * @see hook_entity_postsave()
- * @see hook_entity_postinsert()
- * @see hook_entity_postupdate()
- * @see hook_entity_postdelete()
- */
-// function hook_post_action_bmm_entity_postdelete($entity, $entity_type) {
-//   list($id) = entity_extract_ids($entity_type, $entity);
-//   watchdog('hook_post_action_bmm', "The deleted entity {$entity_type} id is {$id} from " . __FUNCTION__);
-// }
-
-/**
- * Gets called after a node has been inserted/updated/deleted to database.
- *
- * @param $node
- *   A node object
- * @param string $op
- *   An string containing the operating that's taking place (insert/update/delete)
- *
- * @see hook_node_postinsert()
- * @see hook_node_postupdate()
- * @see hook_node_postdelete()
- * @see hook_node_postsave()
- */
-// function hook_post_action_bmm_node_postsave($node, $op) {
-//   watchdog('Node Type', "{$node->type}");
-//   $menu = $node->menu;
-//   if ($menu['enabled']) {
-//     watchdog('Better MM', "Node {$node->title} should have a menu link.");
-//     $parent = explode(':', $menu['parent']);
-//     $menu_name = $parent[0];
-//     watchdog('Better MM', "Node {$node->title} should have a menu link in the {$menu_name} menu.");
-//   }
-// }
+require_once(drupal_get_path('module', 'better_mm') . '/includes/helpers.inc');
 
 /**
  * Gets called after a node has been inserted to database.
@@ -111,11 +15,20 @@
 function hook_post_action_bmm_node_postinsert($node) {
   $menu = $node->menu;
   $bmm = variable_get('bmm_menu', '');
+  
   if ($menu['enabled']) {
     $parent = explode(':', $menu['parent']);
     $menu_name = $parent[0];
+	
+	// If the menu we're editing is the BMM and if the current node being
+	// inserted is at the root level of the menu, add it to the BMM form
+	// settings variable
     if ($menu_name == $bmm) {
-      $bmm_block_content = hook_post_action_bmm_get_block_content($bmm);
+      if(strpos($menu['parent'], $parent[0] . ':0') !== FALSE) {
+        saveToBMMItemSettings($node->menu['link_title'], $node->menu['mlid']);
+      }
+	  
+      $bmm_block_content = bmm_gen_block_html($bmm);
       variable_set('bmm_block_content', $bmm_block_content['html']);
       variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
     }
@@ -139,15 +52,23 @@ function hook_post_action_bmm_node_postupdate($node) {
   if ($menu['enabled']) {
     $parent = explode(':', $menu['parent']);
     $menu_name = $parent[0];
+    
+	// If the menu being edited is the BMM and the currently updated node
+	// is in the root level of the menu, add a setting for the BMM form
+	// settings variable
     if ($menu_name == $bmm) {
-      $bmm_block_content = hook_post_action_bmm_get_block_content($bmm);
+	  if(strpos($menu['parent'], $parent[0] . ':0') !== FALSE) {
+        saveToBMMItemSettings($node->menu['link_title'], $node->menu['mlid']);
+      }
+	  
+      $bmm_block_content = bmm_gen_block_html($bmm);
       variable_set('bmm_block_content', $bmm_block_content['html']);
       variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
     }
   } else {
-    $bmm_block_content = hook_post_action_bmm_get_block_content($bmm);
-    variable_set('bmm_block_content', $bmm_block_content['html']);
-    variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
+      $bmm_block_content = bmm_gen_block_html($bmm);
+      variable_set('bmm_block_content', $bmm_block_content['html']);
+      variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
   }
 }
 
@@ -164,84 +85,8 @@ function hook_post_action_bmm_node_postupdate($node) {
  */
 function hook_post_action_bmm_node_postdelete($node) {
   $bmm = variable_get('bmm_menu', '');
-  $bmm_block_content = hook_post_action_bmm_get_block_content($bmm);
+  
+  $bmm_block_content = bmm_gen_block_html($bmm);
   variable_set('bmm_block_content', $bmm_block_content['html']);
   variable_set('bmm_mobile_block_content', $bmm_block_content['mobile']);
-}
-
-// =================================================================================
-// = Generate block content after changing menu links from the node edit pages. =
-// =================================================================================
-
-function hook_post_action_bmm_get_block_content($menu_name) {
-  $menu_settings = variable_get('bmm_menu_items_settings', '');
-  $mobile_settings = variable_get('bmm_mobile_menu_settings', '');
-  $below_mobile_nav = $mobile_settings['below_mobile_nav']['value'];
-  $mobile_footer = $mobile_settings['bmm_menu_mobile_footer']['value'];
-  $key = 0;
-  $html = '<ul class="mega-menu mega-level-1 first hide-on-med-and-down">';
-  $mobile_html = '<ul id="nav-mobile" class="side-nav">';
-  $mobile_html .= better_mm_mobile_secondary_html($mobile_settings);
-  $mobile_html .= '<ul class="main-menu-navigation">';
-  $menu_items = menu_navigation_links($menu_name);
-  foreach ($menu_items as $menu_item) {
-    $item_title = $menu_item['title'];
-    $item_name = str_replace(' ', '-', strtolower($item_title));
-    $item_style = !empty($menu_settings[$item_name]['style']) ? 
-      $menu_settings[$item_name]['style'] : 'standard';
-    $item_nolink = !empty($menu_settings[$item_name]['style_settings']['nolink']) ? 
-      $menu_settings[$item_name]['style_settings']['nolink'] : 0;
-    $fid = !empty($menu_settings[$item_name]['style_settings']['wide_setting']) ?
-      $menu_settings[$item_name]['style_settings']['wide_setting'] : 0;
-    $children = better_mm_get_children($menu_item);
-    $l1_class = better_mm_get_li_class($key, $menu_items);
-    $child_class = better_mm_get_child_class($children, $item_style);
-    $child_class_mob = better_mm_get_child_class($children, $item_style, TRUE);
-    $class_list = $l1_class . $child_class;
-    $class_list_mob = $item_classes . $l1_class . $child_class_mob;
-    if ($menu_item['href'] == '<front>') {
-      $url = url('<front>');
-    } elseif (preg_match('/^http/', $menu_item['href']) === 1) {
-      $url = $menu_item['href'];
-    } else {
-      $url = '/' . drupal_get_path_alias($menu_item['href']);
-    }
-    $html .= '<li class="' . $class_list . '"><a';
-    $mobile_html .= '<li class="' . $class_list_mob . '"><a';
-    if ($item_nolink) {
-      $html .= '>' . $item_title . '</a>';
-      $mobile_html .= '>' . $item_title . '</a>';
-    }
-    if (!$item_nolink) {
-      $html .= ' href="' . $url . '">' . $item_title . '</a>';
-      $mobile_html .= ' href="' . $url . '">' . $item_title . '</a>';
-    }
-    if ($item_style == 'advanced') {
-      if (!empty($menu_settings[$item_name]['style_settings']['advanced_setting']['value'])) {
-        $html .= '<ul class="mega-level-2 ' . $item_style . '">';
-        $html .= '<div class="inner row">' 
-          . $menu_settings[$item_name]['style_settings']['advanced_setting']['value'] 
-          . '</div> <!-- end inner row -->';
-        $html .= '</ul>';
-      }
-      $html .= '</li>';
-    }
-    if ($item_style == 'wide' || $item_style == 'standard') {
-      $html .= better_mm_menu_item_tree($item_style, $children, $fid);
-    }
-    $mobile_html .= better_mm_menu_item_tree($item_style, $children, $fid, TRUE);
-    $key++;
-  } // foreach menu_item
-  $html .= '</ul>';
-  $mobile_html .= $mobile_footer;
-  $mobile_html .= '</ul>';
-  // Add mobile nav button.
-  $html .= '<span class="nav-button valign-wrapper hide-on-large-only">';
-  $html .= '<div class="valign">';
-  $html .= '<a href="#" data-activates="nav-mobile" class="button-collapse">';
-  $html .= '<i class="material-icons">menu</i><span class="menu-text">menu</span></a>';
-  // Add mobile code below mobile nav button.
-  $html .= $below_mobile_nav . '</div></span>';
-  
-  return array('html' => $html, 'mobile' => $mobile_html);
 }

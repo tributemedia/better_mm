@@ -2,7 +2,7 @@ name = Better Mega Menu
 description = Provides configuration page to choose a menu to pull items from and create a custom menu using those items.
 package = Menus
 core = 7.x
-version 7.x-1.1-beta
+version 7.x-1.2-beta
 files[] = better_mm.module
 stylesheets[all][] = css/better_mm.css
 configure = admin/structure/better_mm
