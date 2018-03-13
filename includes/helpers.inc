@@ -85,12 +85,8 @@ function bmm_gen_block_html($menu_name = NULL) {
       
       // If a file has been uploaded, set file status to permanent.
       if (is_numeric($fid) && $fid != 0) {
-        $item = menu_get_item($menu_item['link']['link_path']);
-        $mlid = db_select('menu_links' , 'ml')
-          ->condition('ml.link_path' , $item['href'])
-          ->fields('ml' , array('mlid'))
-          ->execute()
-          ->fetchField();
+        dsm($menu_item);
+        $mlid = $menu_item['link']['mlid'];
         $file = file_load($fid);
         $file->status = FILE_STATUS_PERMANENT;
         file_save($file);
