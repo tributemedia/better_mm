@@ -1,7 +1,35 @@
 <?php
 
+/* Todo:
+ * BMM admin form, to include social media checkbox for each secondary item.
+ */
+
+
+
 /*
- * Builds BMM block desktop and mobile HTML.
+ * Builds BMM main and secondary menu block HTML.
+ * 
+ * @param $menu_name
+ *   The name of the menu to load the link structure from. If a menu name is
+ *   not provided, then the default menu name set in the BMM settings will be
+ *   used.
+ * 
+ * @param $secondary_name
+ *   The name of the secondary menu to load.
+ *
+ * @return array
+ *   Returns a multi-dimensional array with two indices. The first is 'html'
+ *   which is the HTML structure for the desktop menu. The second index,
+ *   'mobile', is the HTML menu structure for a mobile menu.
+ */
+function bmm_gen_block_html($menu_name = NULL, $secondary_name = NULL) {
+  $blocks_content = bmm_main_block_html($menu_name);
+  bmm_secondary_block_html($secondary_name);
+  return $blocks_content;
+}
+
+/*
+ * Helper function used for creating main menu HTML.
  * 
  * @param $menu_name
  *   The name of the menu to load the link structure from. If a menu name is
@@ -13,7 +41,7 @@
  *   which is the HTML structure for the desktop menu. The second index,
  *   'mobile', is the HTML menu structure for a mobile menu.
  */
-function bmm_gen_block_html($menu_name = NULL) {
+function bmm_main_block_html($menu_name = NULL) {
   $menu_settings = variable_get('bmm_menu_items_settings');
   $mobile_settings = variable_get('bmm_mobile_menu_settings');
   $menu_items = '';
@@ -145,6 +173,95 @@ function bmm_gen_block_html($menu_name = NULL) {
   }
   
   return array('html' => $html, 'mobile' => $mobile_html);
+}
+
+/*
+ * Build secondary html.
+ */
+
+function bmm_secondary_block_html($menu_name) {
+  
+  $menu_items = '';
+
+  if(isset($menu_name)) {
+    $menu_items = menu_tree_all_data($menu_name, NULL, 5);;
+  }
+  else {
+	  watchdog('php', 'Notice: No menu specified for bmm_secondary_block_html().');
+    return array();
+  }
+  dsm($menu_items);
+  $html = '<div class="secondary-menu-wrapper">';
+  $menu_items_html = '<ul id="secondary-menu">';
+  $soc_items_html = '<ul id="social-links">';
+  
+  foreach ($menu_items as $menu_item) {
+    
+    if ($soc_med) {
+      $soc_items_html .= bmm_gen_link($menu_item);
+    } else {
+      $menu_items_html .= bmm_gen_link($menu_item);
+    }
+  }
+  $html .= $menu_items_html . '</ul>';
+  $html .= $soc_items_html . '</ul>';
+  $html .= '</div>';
+  
+  return $html;
+}
+
+/*
+ * Helper function to get <li> code for each menu item.
+ */
+
+function bmm_gen_link($menu_item) {
+  $link_atts = isset($menu_item['link']['options']['attributes']) ? 
+    $menu_item['link']['options']['attributes'] : array();
+  $item_atts = isset($menu_item['link']['options']['item_attributes']) ? 
+    $menu_item['link']['options']['item_attributes'] : array();
+  $item_classes = $item_atts['class'];
+  $item_id = $item_atts['id'];
+  $link_path = $menu_item['link']['link_path'];
+  $link_title = $menu_item['link']['link_title'];
+  $link_id = isset($link_atts['id']) ? $link_atts['id'] : '';
+  $link_classes = isset($link_atts['class']) ? 
+    $link_atts['class'] : array();
+  $class_str = '';
+  
+  if (!empty($link_classes)) {
+    foreach ($link_classes as $link_class) {
+      $class_str .= $link_class . ' ';
+    }
+    $class_str = trim($class_str);
+  }    
+  
+  if ($menu_item['link']['link_path'] == '<front>') {
+    $url = url('<front>');
+  } elseif (preg_match('/^http/', $menu_item['link']['link_path']) === 1) {
+    $url = $menu_item['link']['link_path'];
+  } else {
+    $url = '/' . drupal_get_path_alias($menu_item['link']['link_path']);
+  }    
+  
+  $html = '<li';
+  if ($item_id) {
+    $html .= ' id="' . $item_id . '"';
+  }
+  if ($item_classes) {
+    $html .= ' class="' . $item_classes . '"';
+  }
+  $html .= '>';
+  $html .= '<a href="' . $url . '"';
+  if ($link_id) {
+    $html .= ' id="' . $link_id . '"';
+  }
+  if ($class_str) {
+    $html .= ' class="' . $class_str . '"';
+  }
+  $html .= '>';
+  $html .= $link_title . '</a></li>';
+  
+  return $html;
 }
 
 /*

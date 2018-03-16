@@ -273,6 +273,21 @@ function better_mm_admin_settings($form, &$form_state) {
     '#type' => 'value',
     '#value' => $bmm_menu_items,
   );
+    
+  // Secondary menu settings
+  
+  $menus = better_mm_get_options('menus');
+  $def_sec_menu = variable_get('bmm_secondary_menu', 'menu-secondary-menu');
+  
+  $form['bmm_secondary_menu'] = array(
+    '#type' => 'select',
+    '#title' => t('Secondary Menu'),
+    '#description' => t('Choose the menu you want to use for the secondary menu.'),
+    '#options' => $menus,
+    '#default_value' => $def_sec_menu,
+  );
+  
+  // Mobile menu settings
   
   $form['bmm_mobile_menu_settings'] = array(
     '#type' => 'fieldset',
@@ -292,45 +307,6 @@ function better_mm_admin_settings($form, &$form_state) {
     '#collapsible' => TRUE,
   );
   
-  $secondary_items = $mobile_settings['secondary_items_settings'];
-  
-  for ($i = 1; $i <= 5; $i++) {
-    if (!empty($secondary_items['secondary_item'][$i]['href'])) {
-      $collapsed = FALSE;
-    } else {
-      $collapsed = TRUE;
-    }
-    $form['bmm_mobile_menu_settings']['secondary_items_settings']['secondary_item'][$i] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Secondary Item ' . $i),
-      '#collapsible' => TRUE,
-      '#collapsed' => $collapsed,
-    );
-    $form['bmm_mobile_menu_settings']['secondary_items_settings']['secondary_item'][$i]['title'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Item Title'),
-      '#description' => t('Leave blank if adding a class for an icon.'),
-      '#default_value' => $secondary_items['secondary_item'][$i]['title'],
-    );
-    $form['bmm_mobile_menu_settings']['secondary_items_settings']['secondary_item'][$i]['href'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Item URL'),
-      '#description' => t('The path for this menu link. 
-        This can be an internal Drupal path such as %add-node or an external URL such as %drupal. 
-        Enter %front to link to the front page.', array(
-          '%front' => '<front>', 
-          '%add-node' => 'node/add', 
-          '%drupal' => 'http://drupal.org',
-        )),
-      '#default_value' => $secondary_items['secondary_item'][$i]['href'],  
-    );
-    $form['bmm_mobile_menu_settings']['secondary_items_settings']['secondary_item'][$i]['class'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Item Class'),
-      '#description' => t('Enter any classes you want added to this menu item.'),
-      '#default_value' => $secondary_items['secondary_item'][$i]['class'],
-    );
-  }
   $form['bmm_mobile_menu_settings']['bmm_menu_mobile_footer'] = array(
     '#type' => 'text_format',
     '#title' => t('Mobile Menu Footer Content'),
@@ -374,8 +350,9 @@ function better_mm_admin_settings_submit(&$form, &$form_state) {
   variable_set('bmm_menu_items', $form_state['values']['bmm_menu_items']);
   variable_set('bmm_menu_items_settings', $form_state['values']['bmm_menu_items_settings']);
   variable_set('bmm_mobile_menu_settings', $form_state['values']['bmm_mobile_menu_settings']);
+  variable_set('bmm_secondary_menu', $form_state['values']['bmm_secondary_menu']);
   
-  $gen_html = bmm_gen_block_html();
+  $gen_html = bmm_gen_block_html(NULL, variable_get('bmm_secondary_menu'));
 
   variable_set('bmm_block_content', $gen_html['html']);
   variable_set('bmm_mobile_block_content', $gen_html['mobile']);
@@ -452,12 +429,10 @@ function better_mm_node_delete($node) {
   $nodeMenuItem = menu_link_get_preferred($nodePath, $bmm);
   
   if(isset($nodeMenuItem)) {
-	if($bmm == $nodeMenuItem['menu_name'] && $nodeMenuItem['plid'] == 0) {
-	  $item_name = str_replace(' ', '-', 
-	    strtolower($nodeMenuItem['link_title']));
-	  saveToBMMItemSettings($item_name, $nodeMenuItem['mlid'], 
-	    TRUE);
-	}
+	  if($bmm == $nodeMenuItem['menu_name'] && $nodeMenuItem['plid'] == 0) {
+	    $item_name = str_replace(' ', '-', strtolower($nodeMenuItem['link_title']));
+	    saveToBMMItemSettings($item_name, $nodeMenuItem['mlid'], TRUE);
+	  }
   }
 }
 
@@ -643,31 +618,8 @@ function better_mm_menu_item_tree($style, $children, $fid, $mobile = FALSE) {
 // ====================================
 
 function better_mm_mobile_secondary_html($mobile_settings) {
-  $secondary_items = $mobile_settings['secondary_items_settings']['secondary_item'];
-  $result = '';
   
-  if (!empty($secondary_items[1]['href'])) {
-    $result .= '<div class="side-nav-header">';
-    $result .= '<ul class="mobile-secondary">';
-    foreach ($secondary_items as $key => $menu_item) {
-      $link_title = $menu_item['title'];
-      if ($menu_item['href'] == '<front>') {
-        $url = url('<front>');
-      } elseif (strpos($menu_item['href'], 'http') === 0) {
-        $url = $menu_item['href'];
-      } else {
-        $url = '/' . drupal_get_path_alias($menu_item['href']);
-      }
-      $class = $menu_item['class'];
-      if (!empty($menu_item['href'])) {
-        $result .= '<li><div class="table"><div class="table-cell">';
-        $result .= '<a href="' . $url . '" class="' . $class . '"><span class="inner">' . $link_title . '</span></a>';
-        $result .= '</div></div></li>';
-      }
-    }
-    $result .= '</ul></div>';
-  }
-  return $result;
+  return '<p>random text</p>';
 }
 
 // ================================
@@ -681,6 +633,9 @@ function better_mm_block_info() {
   );
   $blocks['better_mm_mobile_block'] = array(
     'info' => t('Better Mega Menu Mobile Block'),
+  );
+  $blocks['better_mm_secondary_block'] = array(
+    'info' => t('Better Mega Menu Secondary Block'),
   );
   
   return $blocks;
@@ -702,6 +657,11 @@ function better_mm_block_view($delta = '') {
     case 'better_mm_mobile_block':
     $block['subject'] = '';
     $block['content'] = variable_get('bmm_mobile_block_content', '');
+    break;
+    
+    case 'better_mm_secondary_block':
+    $block['subject'] = '';
+    $block['content'] = variable_get('bmm_secondary_block_content', 'This is the secondary block');
     break;
   }
   return $block;
