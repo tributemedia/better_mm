@@ -117,7 +117,7 @@ function better_mm_admin_settings($form, &$form_state) {
     $form_state['values']['bmm_menu_items_settings'] : '';
   $mobile_settings = variable_get('bmm_mobile_menu_settings');
   $mobile_default = !empty($mobile_settings['below_mobile_nav']['value']) ? 
-    $mobile_settings['below_mobile_nav']['value'] : $phone;
+    $mobile_settings['below_mobile_nav']['value'] : '';
   $footer_default = !empty($mobile_settings['bmm_menu_mobile_footer']['value']) ? 
     $mobile_settings['bmm_menu_mobile_footer']['value'] : $footer;
   $wide_access = FALSE;
